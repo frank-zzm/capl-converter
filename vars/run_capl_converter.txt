@@ -1,0 +1,6 @@
+Run CAPL conversion job
+Usage: start_capl_conversion(String fileList, String conversionType)
+Parameters:
+fileList - Input file with paths to .DAT files
+           (e.g. \\SE03-FS01.corp.int\COMMON$\SE03\DataLake\Vision_tmp_data\GVP-11882\TestFilesList1.txt)
+conversionType - Type of conversion which will be performed (Choices: flc2-resim-2910 or dai-to-flc2)

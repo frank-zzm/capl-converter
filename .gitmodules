@@ -1,0 +1,3 @@
+[submodule "HilScripts"]
+	path = HilScripts
+	url = ssh://aes-gerrit.eu.autoliv.int:29418/SharedTools/HilScripts

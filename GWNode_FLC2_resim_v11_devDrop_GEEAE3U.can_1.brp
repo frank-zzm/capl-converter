@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<breakpoints>
+  <breakpoint Active="true" HaltsSimulation="true" AbsoluteLine="87" Function="" RelativeLine="1" />
+  <breakpoint Active="true" HaltsSimulation="true" AbsoluteLine="100" Function="" RelativeLine="5" />
+  <breakpoint Active="true" HaltsSimulation="true" AbsoluteLine="193" Function="" RelativeLine="12" />
+  <breakpoint Active="true" HaltsSimulation="true" AbsoluteLine="70" Function="" RelativeLine="1" />
+</breakpoints>

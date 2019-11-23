@@ -1,0 +1,110 @@
+/*@!Encoding:1252*/
+
+variables
+{
+  byte firstTime = 1;
+}
+
+void UpdateOEMoutput(enum e_GwInternalVariables updatedSignal)
+{
+  switch (updatedSignal)
+  {
+    case eLongitudinalAcceleration:
+      // SetLongitudinalAcceleration();
+    break;
+    
+    case eLongitudinalSpeed:
+      SetLongitudinalSpeed();
+    break;
+    
+    case eLongitudinalSpeedQual:
+      SetLongitudinalSpeedQual();
+    break;
+
+    case eDrivingDirection:
+      // SetDrivingDirection();
+    break;
+
+    case eAcceleratorPedal:
+      // SetAcceleratorPedal();
+    break;
+
+    case eLateralAcceleration:
+      // SetLateralAcceleration();
+    break;
+
+    case eVertAcceleration:
+      // SetVertAcceleration(); // TODO: missing signal
+    break;
+
+    case eYawRate:
+      SetYawRate();
+    break;
+
+    case eYawRateQual:
+      SetYawRateQual();
+    break;
+
+    case eAmbientTemperature:
+      // SetAmbientTemperature(); // TODO: missing signal
+    break;
+
+    case eWiperStatus:
+      // SetWiperStatus(); // TODO: missing signal
+    break;
+
+    case eFrontWheelAngle:
+      // SetPinionAngle();
+    break;
+    
+    default:
+      writeToLog("ERROR: Unknown internal GW signal! Number = %d\n", updatedSignal);
+      return;
+  }
+}
+
+void SetLongitudinalSpeed(void)
+{
+  setsignal(genericTargetNetwork::longitudinalSpeed, longitudinalSpeed * 0.01/0.00391);
+}
+
+void SetLongitudinalSpeedQual(void)
+{
+  //setting of signal longitudinalSpeedQual
+  if(longitudinalSpeedQual == 1)
+  {
+    setsignal(genericTargetNetwork::longitudinalSpeedQual, 1);
+  }
+  else
+  {
+    setsignal(genericTargetNetwork::longitudinalSpeedQual, 0);
+  }
+}
+
+void SetYawRate(void)
+{
+  //setting of signal YawRate
+  //@sysvar::UserVariables::YawRate = _round(yawRate);
+  setsignal(genericTargetNetwork::yawRate, yawRate / 10000 / 0.000244140625);
+}
+
+void SetYawRateQual(void)
+{ 
+  //setting of signal YawRateQual
+  if(yawRateQual == 2)
+  {
+    setsignal(genericTargetNetwork::yawRateQual, 2);
+  }
+  else
+  {
+    setsignal(genericTargetNetwork::yawRateQual, 0);
+  }
+}
+
+on message CAN1.VehicleData
+{
+  checkLogger(this.Time_ns);
+  SetLongitudinalSpeed();
+  SetYawRate();
+  SetYawRateQual();
+}

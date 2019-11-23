@@ -1,0 +1,56 @@
+{
+  "versions": {
+    "pc": {
+      "collectionTool": [5, 0, 0],
+      "adtfStreamingLibrary": [2, 7, 1]
+    },
+    "bob": {
+      "type": 30,
+      "fpgaVersion": [2, 0, 1]
+    }
+  },
+  "errorCount": 0,
+  "labels": {
+    "com_country_code": "BE",
+    "sky": [[0, 0, "overcast"]],
+    "detailedPrecipitation": [[0, 0, "none"]],
+    "timeOfDay": [[0, 0, "duskDawn"]],
+    "roadType": [[0, 0, "unset"]],
+    "roadCover": [[0, 0, "unset"]],
+    "eventSituation": [],
+    "roadCategorySignType": [],
+    "trafficSignType": [],
+    "trafficDensity": [[0, 0, "heavy"]],
+    "streetLighting": [[0, 0, "unset"]],
+    "laneMarkingType": [[0, 0, "unset"]]
+  },
+  "properties": [{
+    "BoB": "SKDU_101_1012/2/_P1B_T580000005_17W24",
+    "bob_CAN1": "N/A",
+    "bob_CAN2": "N/A",
+    "bob_CAN3": "N/A",
+    "bob_CAN4": "N/A",
+    "bob_FlexRay": "SMPC_STAR_2_3_V1_2016_Ecu_Details_Extract_2017_05a",
+    "bob_FlexRay2": "213_238_257_CHASSIS_FlexRay_2016_42a",
+    "cameraPositionHorizontal": "Center",
+    "cameraPositionVertical": "High",
+    "comments": "",
+    "driver": "malin.rudin",
+    "ecVersion": "7",
+    "ecuID": "SVS416A0DC0002",
+    "headlights": "LED_84pxl",
+    "leftType": "RGB",
+    "masterSystem": false,
+    "otherHardware": ["GPS"],
+    "relatedIssueNumber": "560459",
+    "rightType": "RGB",
+    "softwareRelease": "SMPC5_R0C_RC12 (170961)",
+    "vin": "WDD2130051A222529",
+    "windshield": "Green",
+    "windshieldExtras": ""
+  }],
+  "requiredSignals": null,
+  "missingAndInvalidSignals": [],
+  "triggerDefinitions": null,
+  "triggerEvents": []
+}

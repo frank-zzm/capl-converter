@@ -1,0 +1,936 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+ // #include "test\fileToConvert.cin"
+  #include "fileToConvert.cin"
+  #include "parameterValues.cin"
+  #include "gwFunctionsAndVariables.cin"
+  #include "oemDAI2GEEAFlexray.cin"
+  #include "sourceNetworkMsgFunctions_Extract_213_238_257_CHASSIS_FlexRay_2016_42a.cin"
+
+   // Defines variable "fileToConvert"
+  // add E2E.can
+}
+
+variables
+{
+  const dword cFrNullFlag = 0x400; // only for VN
+  
+  msTimer replayCheck;
+  char fileName[500], filePath[1000], relFilePath[500];
+  dword fileHandler;
+  byte loggerStarted = 0;
+  int64 lastTimeStamp = 0;
+  int64 firstTimeStamp = -1;
+  int has_logged_timesyn=0;
+  //
+  byte receivedAsdmFLC_FlexraySignalIPdu00 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu01 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu02 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu03 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu04 = 0;
+  byte receivedAsdmFlcFRNmPdu1 = 0;
+  byte receivedASDMFlcFlexTimeSynchPdu=0;
+  //intermediate temp variable
+  int  SG_longitudinalSpeed;
+  int  SG_longitudinalSpeedQual;
+  int  SG_yawRate;
+  int  SG_yawRateQual;
+  int  SG_longitudinalAcceleration;
+  int  SG_longitudinalAccelerationQual;//the upper part has been set
+  
+  int  SG_lateralAcceleration;
+  int  SG_lateralAccelerationQual;
+  int  SG_frontWheelAngle;
+  int  SG_wheelSpeedFrontRight;
+  int  SG_wheelSpeedFrontLeft;
+  int  SG_wheelSpeedRearLeft;
+  int  SG_wheelSpeedRearRight;
+  int  SG_actualBreakTorquetostandstill;
+  int SG_DrivingDirection;
+  
+  //cntr spec
+  //PDU00
+  int temp_PosnFromSatltCntr=-1;
+  int SG_isAgDataRawSafeCntr=-1;
+  int SG_isADataRawSafeCntr=-1;
+  int temp_isCamSnsrPoseCntr=-1;
+  //PDU01
+  int SG_isAsyDataWithCmpSafeCntr=-1;
+  int SG_isSteerWhlSnsrCntr=-1; 
+  int SG_isVehMtnStCntr=-1;
+  int SG_isVehSpdLgtCntr=-1;
+  int SG_isWhlDirRotlReCntr=-1;
+  int SG_isWhlSpdCircumlReCntr=-1;
+  int SG_isWhlSpdCircumlFrntCntr=-1;
+  //PDU02
+  int temp_isCamSnsrVehPrmCntr=-1;
+  //PDU03
+  int temp_isTrsmActrPosnSafeTrsmActrPosnCntr=-1;
+  int temp_isVehModMngtGlbSafe1Cntr=-1;
+
+  }
+
+// CRC
+byte GEEA_E2E_Compute(byte data_bytes[],byte data_lenth,byte crc_init_value)
+{
+  char tempText[1024];
+  int i,j;
+  byte u8_crc8;
+  byte u8_poly;
+  
+  u8_crc8 = crc_init_value;
+  u8_poly =0x1D;
+  for(i=0;i< data_lenth;i++)
+  {
+    u8_crc8 =data_bytes[i];
+    for(j=0;j<8;j++)
+    {
+      if(u8_crc8 &0x80)
+      {
+        u8_crc8 =(u8_crc8<<1)^u8_poly;
+      }
+      else{
+        u8_crc8<<=1;
+      }
+    }
+  }
+  u8_crc8 ^= 0x00;
+  return u8_crc8;
+}
+//Function
+byte computeADataRawSafeChks(frPDU AsdmFLC_FlexraySignalIPdu01 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[12];
+  word dataLength = 8*11;
+  word dataID = 34;
+
+  dataArray[0] =  0x22; //ADataRawSafe_SRS ID:  34  hex: 0x22
+  dataArray[1] =  0x22>>8;
+  dataArray[2] =  SG_isADataRawSafeCntr; //alivecounter
+  dataArray[3] =  SG_lateralAcceleration>> 0;
+  dataArray[4] =  SG_lateralAcceleration>> 8;
+  dataArray[5] =  SG_lateralAccelerationQual>> 0;
+  dataArray[6] =  SG_longitudinalAcceleration>> 0;
+  dataArray[7] =  SG_longitudinalAcceleration>> 8;
+  dataArray[8] =  3>> 0;
+  dataArray[9] =  TargetPDU.isADataRawSafeAVert>> 0;
+  dataArray[10] =  TargetPDU.isADataRawSafeAVert>> 8;
+  dataArray[11] =  3>> 0;
+  chks = GEEA_E2E_Compute(dataArray, 12, 0x00);
+
+  return chks;
+}
+
+byte computeAgDataRawSafeChks(frPDU AsdmFLC_FlexraySignalIPdu01 pdu01)
+{
+  byte chks=0;
+  byte dataArray[9];
+  word dataLength = 8*8;
+  word dataID = 35;
+
+  dataArray[0] =  0x23; //AgDataRawSafe_SRS,Data ID:  35  hex: 0x23
+  dataArray[1] =  0x23>>8;
+  dataArray[2] =  SG_isAgDataRawSafeCntr;
+  dataArray[3] =  pdu01.isAgDataRawSafeRollRate>> 0;
+  dataArray[4] =  pdu01.isAgDataRawSafeRollRate>> 8;
+  dataArray[5] =  3>> 0;
+  dataArray[6] =  SG_yawRate>> 0;
+  dataArray[7] =  SG_yawRate>> 8;
+  dataArray[8] =  3>> 0;
+   chks = GEEA_E2E_Compute(dataArray, 9, 0x00);
+
+  return chks;
+
+}
+
+byte computeCamSnsrPoseChks(frPDU AsdmFLC_FlexraySignalIPdu03 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[15];
+  word dataLength = 8*14;
+  word dataID = 1746;
+
+  dataArray[0] =  0x6D2; //CamSnsrPose_ASDM,Data ID:  1746  hex: 0x6D2
+  dataArray[1] =  0x6D2>>8;
+  dataArray[2] =  temp_isCamSnsrPoseCntr;
+  dataArray[3] =  TargetPDU.isCamSnsrPosePitchAg>> 0;
+  dataArray[4] =  TargetPDU.isCamSnsrPosePitchAg>> 8;
+  dataArray[5] =  TargetPDU.isCamSnsrPosePosnLat>> 0;
+  dataArray[6] =  TargetPDU.isCamSnsrPosePosnLat>> 8;
+  dataArray[7] =  TargetPDU.isCamSnsrPosePosnLgt>> 0;
+  dataArray[8] =  TargetPDU.isCamSnsrPosePosnLgt>> 8;
+  dataArray[9] =  TargetPDU.isCamSnsrPosePosnVert>> 0;
+  dataArray[10] =  TargetPDU.isCamSnsrPosePosnVert>> 8;
+  dataArray[11] =  TargetPDU.isCamSnsrPoseRollAg>> 0;
+  dataArray[12] =  TargetPDU.isCamSnsrPoseRollAg>> 8;
+  dataArray[13] =  TargetPDU.isCamSnsrPoseYawAg>> 0;
+  dataArray[14] =  TargetPDU.isCamSnsrPoseYawAg>> 8;   
+
+  chks = GEEA_E2E_Compute(dataArray, 15, 0x00);
+
+  return chks;
+
+}
+
+byte computeAsyDataWithCmpSafeChks(frPDU AsdmFLC_FlexraySignalIPdu01 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[12];
+  word dataLength = 8*11;
+  word dataID = 36;
+
+  dataArray[0] =  0x24; //AsyDataWithCmpSafe_SRS,Data ID:  36  hex: 0x24
+  dataArray[1] =  0x24>>8;
+  dataArray[2] =  SG_isAsyDataWithCmpSafeCntr;
+  dataArray[3] =  3 >> 0;
+  dataArray[4] =  SG_lateralAcceleration >> 0;
+  dataArray[5] =  SG_lateralAcceleration>> 8;
+  dataArray[6] =  3 >> 0;
+  dataArray[7] =  SG_lateralAcceleration >> 0;
+  dataArray[8] =  SG_lateralAcceleration>> 8;
+  dataArray[9] =  3 >> 0;
+  dataArray[10] =  SG_yawRate >> 0;
+  dataArray[11] =  SG_yawRate >> 8;
+  chks = GEEA_E2E_Compute(dataArray, 12, 0x00);
+  
+  return chks;
+}
+
+byte computeSteerWhlSnsrChks(frPDU AsdmFLC_FlexraySignalIPdu01 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[8];
+  word dataLength = 8*7;
+  word dataID = 51;
+
+  dataArray[0] =  0x33; //SteerWhlSnsr_SAS,Data ID:  51  hex: 0x33
+  dataArray[1] =  0x33>>8;
+  dataArray[2] =  SG_isSteerWhlSnsrCntr;
+  dataArray[3] =  3 >> 0;
+  dataArray[4] =  SG_frontWheelAngle >> 0;
+  dataArray[5] =  SG_frontWheelAngle>> 8;
+  dataArray[6] =  TargetPDU.isSteerWhlSnsrSteerWhlAgSpd >> 0;
+  dataArray[7] =  TargetPDU.isSteerWhlSnsrSteerWhlAgSpd  >> 8;
+
+  chks = GEEA_E2E_Compute(dataArray, 8, 0x00);
+  
+  return chks;
+}
+
+byte computeTrsmActrPosnSafeTrsmActrPosnChks(frPDU AsdmFLC_FlexraySignalIPdu03 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[4];
+  word dataLength = 8*3;
+  word dataID = 65535;
+
+  dataArray[0] =  0xFFFF; // NO THIS DATA-ID, set HEX= 0xffff,DEC= 65535
+  dataArray[1] =  0xFFFF>>8;
+  dataArray[2] =  temp_isTrsmActrPosnSafeTrsmActrPosnCntr;
+  dataArray[3] =  TargetPDU.isTrsmActrPosnSafeTrsmActrPosn >> 0;
+
+  chks = GEEA_E2E_Compute(dataArray, 4, 0x00);
+  
+  return chks;
+}
+
+byte computeVehModMngtGlbSafe1Chks(frPDU AsdmFLC_FlexraySignalIPdu03 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[11];
+  word dataLength = 8*10;
+  word dataID = 65535;
+
+  dataArray[0] =  0xFFFF; //NO THIS DATA-ID, set HEX= 0xffff,DEC= 65535
+  dataArray[1] =  0xFFFF>>8;
+  dataArray[2] =  temp_isVehModMngtGlbSafe1Cntr;
+  dataArray[3] =  TargetPDU.isVehModMngtGlbSafe1CarModSts1>> 0;  
+  dataArray[4] =  TargetPDU.isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp>> 0;
+  dataArray[5] =  TargetPDU.isVehModMngtGlbSafe1EgyLvlElecMai>> 0;
+  dataArray[6] =  TargetPDU.isVehModMngtGlbSafe1EgyLvlElecSubtyp>> 0;
+  dataArray[7] =  TargetPDU.isVehModMngtGlbSafe1FltEgyCnsWdSts>> 0;
+  dataArray[8] =  TargetPDU.isVehModMngtGlbSafe1PwrLvlElecMai>> 0;
+  dataArray[9] =  TargetPDU.isVehModMngtGlbSafe1PwrLvlElecSubtyp>> 0;
+  dataArray[10] =  TargetPDU.isVehModMngtGlbSafe1UsgModSts>> 0;
+  chks = GEEA_E2E_Compute(dataArray, 11, 0x00);
+  
+  return chks;
+}
+
+byte computeVehMtnStChks(frPDU AsdmFLC_FlexraySignalIPdu01 pdu01)
+{
+  byte chks=0;
+  byte dataArray[4];
+  word dataLength = 8*3;
+  word dataID = 36;
+
+  dataArray[0] =  0x36; //VehMtnSt_VDDM,Data ID:  54  hex: 0x36
+  dataArray[1] =  0x36>>8;
+  dataArray[2] =  SG_isVehMtnStCntr;
+  dataArray[3] =  SG_DrivingDirection >> 0;  
+  chks = GEEA_E2E_Compute(dataArray, 4, 0x00);
+  
+  return chks;
+}
+
+byte computeVehSpdLgtChks(frPDU AsdmFLC_FlexraySignalIPdu01 pdu01)
+{
+  byte chks=0;
+  byte dataArray[6];
+  word dataLength = 8*8;
+  word dataID = 55;
+
+  dataArray[0] =  0x37; //VehSpdLgt_VDDM,Data ID:  55  hex: 0x37
+  dataArray[1] =  0x37>>8;
+  dataArray[2] =  SG_isVehSpdLgtCntr;
+  dataArray[3] =  SG_longitudinalSpeed>>0;
+  dataArray[4] =  SG_longitudinalSpeed >> 8;
+  dataArray[5] =  3 >> 0; 
+  chks = GEEA_E2E_Compute(dataArray, 6, 0x00);
+  
+  return chks;
+}
+
+byte computeWhlDirRotlReChks(frPDU AsdmFLC_FlexraySignalIPdu01 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[5];
+  word dataLength = 8*4;
+  word dataID = 551;
+
+  dataArray[0] =  0x227; //WhlDirRotlRe_VDDM,Data ID:  551  hex: 0x227
+  dataArray[1] =  0x227>>8;
+  dataArray[2] =  SG_isWhlDirRotlReCntr;
+  dataArray[3] =  TargetPDU.isWhlDirRotlReLe >> 0; 
+  dataArray[4] =  TargetPDU.isWhlDirRotlReRi >>0;
+  
+  chks = GEEA_E2E_Compute(dataArray, 5, 0x00);
+  
+  return chks;
+}
+
+byte computeWhlSpdCircumlReChks(frPDU AsdmFLC_FlexraySignalIPdu01 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[9];
+  word dataLength = 8*8;
+  word dataID = 124;
+
+  dataArray[0] =  0x7C; //WhlSpdCircumlRe_VDDM,Data ID:  124  hex: 0x7C
+  dataArray[1] =  0x7C>>8;
+  dataArray[2] =  SG_isWhlSpdCircumlReCntr;
+  dataArray[3] =  SG_wheelSpeedRearLeft >> 0; 
+  dataArray[4] =  SG_wheelSpeedRearLeft >> 8; 
+  dataArray[5] =  3>>0;
+  dataArray[6] =  SG_wheelSpeedRearRight  >>0;
+  dataArray[7] =  SG_wheelSpeedRearRight  >>8;
+  dataArray[8] =  3>>0;  
+  chks = GEEA_E2E_Compute(dataArray, 9, 0x00);
+  
+  return chks;
+}
+
+byte computeCamSnsrVehPrmChks(frPDU AsdmFLC_FlexraySignalIPdu02 TargetPDU)
+{
+  byte chks=0;
+  byte dataArray[63];
+  word dataLength = 8 * 62;
+  word dataID = 1747;
+
+  dataArray[0] =  0x6d3; //CamSnsrVehPrm_ASDM,Data ID:  1747  hex: 0x6d3
+  dataArray[1] =  0x6d3>>8;
+  dataArray[2] =  temp_isCamSnsrVehPrmCntr;
+  dataArray[3] =  TargetPDU.isCamSnsrVehPrmAxlLdDtrb>> 0;
+  dataArray[4] =  TargetPDU.isCamSnsrVehPrmAxleHeiRe>> 0;
+  dataArray[5] =  TargetPDU.isCamSnsrVehPrmAxleHeiRe>> 8;
+  dataArray[6] =  TargetPDU.isCamSnsrVehPrmCalTgtPosX>> 0;
+  dataArray[7] =  TargetPDU.isCamSnsrVehPrmCalTgtPosX>> 8;
+  dataArray[8] =  TargetPDU.isCamSnsrVehPrmCalTgtPosY>> 0;
+  dataArray[9] =  TargetPDU.isCamSnsrVehPrmCalTgtPosY>> 8;
+  dataArray[10] =  TargetPDU.isCamSnsrVehPrmCalTgtPosZ>> 0;
+  dataArray[11] =  TargetPDU.isCamSnsrVehPrmCalTgtPosZ>> 8;
+  dataArray[12] =  TargetPDU.isCamSnsrVehPrmDisFrAxToBump>> 0;
+  dataArray[13] =  TargetPDU.isCamSnsrVehPrmDisFrAxToBump>> 8;
+  dataArray[14] =  TargetPDU.isCamSnsrVehPrmDrWheel>> 0;
+  dataArray[15] =  TargetPDU.isCamSnsrVehPrmDstLatToHdLamp>> 0;
+  dataArray[16] =  TargetPDU.isCamSnsrVehPrmDstLatToHdLamp>> 8;
+  dataArray[17] =  TargetPDU.isCamSnsrVehPrmDstLatToWhlCentr>> 0;
+  dataArray[18] =  TargetPDU.isCamSnsrVehPrmDstLatToWhlCentr>> 8;
+  dataArray[19] =  TargetPDU.isCamSnsrVehPrmDstLgtToBmpFrnt>> 0;
+  dataArray[20] =  TargetPDU.isCamSnsrVehPrmDstLgtToBmpFrnt>> 8;
+  dataArray[21] =  TargetPDU.isCamSnsrVehPrmDstLongToHdLamp>> 0;
+  dataArray[22] =  TargetPDU.isCamSnsrVehPrmDstLongToHdLamp>> 8;
+  dataArray[23] =  TargetPDU.isCamSnsrVehPrmDstVertToHdLamp>> 0;
+  dataArray[24] =  TargetPDU.isCamSnsrVehPrmDstVertToHdLamp>> 8;
+  dataArray[25] =  TargetPDU.isCamSnsrVehPrmDynWhlRadFr>> 0;
+  dataArray[26] =  TargetPDU.isCamSnsrVehPrmDynWhlRadFr>> 8;
+  dataArray[27] =  TargetPDU.isCamSnsrVehPrmDynWhlRadRe>> 0;
+  dataArray[28] =  TargetPDU.isCamSnsrVehPrmDynWhlRadRe>> 8;
+  dataArray[29] =  TargetPDU.isCamSnsrVehPrmFrAxHgt>> 0;
+  dataArray[30] =  TargetPDU.isCamSnsrVehPrmFrAxHgt>> 8;
+  dataArray[31] =  TargetPDU.isCamSnsrVehPrmHoodAg>> 0;
+  dataArray[32] =  TargetPDU.isCamSnsrVehPrmHoodAg>> 8;
+  dataArray[33] =  TargetPDU.isCamSnsrVehPrmPinionAgToWhlAgFac>> 0;
+  dataArray[34] =  TargetPDU.isCamSnsrVehPrmSelfStrGrad>> 0;
+  dataArray[35] =  TargetPDU.isCamSnsrVehPrmSlipAglGrad>> 0;
+  dataArray[36] =  TargetPDU.isCamSnsrVehPrmVehFrTrkWidth>> 0;
+  dataArray[37] =  TargetPDU.isCamSnsrVehPrmVehFrTrkWidth>> 8;
+  dataArray[38] =  TargetPDU.isCamSnsrVehPrmVehHgt>> 0;
+  dataArray[39] =  TargetPDU.isCamSnsrVehPrmVehHgt>> 8;
+  dataArray[40] =  TargetPDU.isCamSnsrVehPrmVehInert>> 0;
+  dataArray[41] =  TargetPDU.isCamSnsrVehPrmVehInert>> 8;
+  dataArray[42] =  TargetPDU.isCamSnsrVehPrmVehLen>> 0;
+  dataArray[43] =  TargetPDU.isCamSnsrVehPrmVehLen>> 8;
+  dataArray[44] =  TargetPDU.isCamSnsrVehPrmVehLvlFrL>> 0;
+  dataArray[45] =  TargetPDU.isCamSnsrVehPrmVehLvlFrL>> 8;
+  dataArray[46] =  TargetPDU.isCamSnsrVehPrmVehLvlFrR>> 0;
+  dataArray[47] =  TargetPDU.isCamSnsrVehPrmVehLvlFrR>> 8;
+  dataArray[48] =  TargetPDU.isCamSnsrVehPrmVehLvlOffset>> 0;
+  dataArray[49] =  TargetPDU.isCamSnsrVehPrmVehLvlReL>> 0;
+  dataArray[50] =  TargetPDU.isCamSnsrVehPrmVehLvlReL>> 8;
+  dataArray[51] =  TargetPDU.isCamSnsrVehPrmVehLvlReR>> 0;
+  dataArray[52] =  TargetPDU.isCamSnsrVehPrmVehLvlReR>> 8;
+  dataArray[53] =  TargetPDU.isCamSnsrVehPrmVehReTrkWidth>> 0;
+  dataArray[54] =  TargetPDU.isCamSnsrVehPrmVehReTrkWidth>> 8;
+  dataArray[55] =  TargetPDU.isCamSnsrVehPrmVehWeight>> 0;
+  dataArray[56] =  TargetPDU.isCamSnsrVehPrmVehWeight>> 8;
+  dataArray[57] =  TargetPDU.isCamSnsrVehPrmVehWhlBas>> 0;
+  dataArray[58] =  TargetPDU.isCamSnsrVehPrmVehWhlBas>> 8;
+  dataArray[59] =  TargetPDU.isCamSnsrVehPrmVehWidth>> 0;
+  dataArray[60] =  TargetPDU.isCamSnsrVehPrmVehWidth>> 8;
+  dataArray[61] =  TargetPDU.isCamSnsrVehPrmWhlRadius>> 0;
+  dataArray[62] =  TargetPDU.isCamSnsrVehPrmWhlRadius>> 8;
+   chks = GEEA_E2E_Compute(dataArray, 63, 0x00);
+  
+  return chks;
+}
+
+byte computeWhlSpdCircumlFrntChks(frPDU AsdmFLC_FlexraySignalIPdu01 pdu01)
+{
+  byte chks=0;
+  byte dataArray[9];
+  word dataLength = 8*8;
+  word dataID = 111;
+
+  dataArray[0] =  0x6F; //WhlSpdCircumlFrnt_VDDM,Data ID:  111  hex: 0x6F
+  dataArray[1] =  0x6F>>8;
+  dataArray[2] =  SG_isWhlSpdCircumlFrntCntr;
+  dataArray[3] =  SG_wheelSpeedFrontLeft >> 0; 
+  dataArray[4] =  SG_wheelSpeedFrontLeft>>8;
+  dataArray[5] = 3>>0;
+  dataArray[6] =  SG_wheelSpeedFrontRight >> 0;  
+  dataArray[7] =  SG_wheelSpeedFrontRight >> 8; 
+  dataArray[8] =  3>>0;
+  chks = GEEA_E2E_Compute(dataArray, 9, 0x00);
+  
+  return chks;
+}
+
+on start
+{
+ 
+  setReplayFileName("ReplayBlock 1",fileToConvert,"asc");
+  //setReplayFilename ("ReplayBlock 2",fileCAN,"asc");
+ 
+  snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+  
+  write("file path log: %s", loggingFile);      
+  setLogFileName("Logging", loggingFile);
+
+
+  replayStart("ReplayBlock 1");
+ // replayStart ("ReplayBlock 2");
+
+  setTimer(replayCheck, 2000);
+  write("start time is %f",timeNow()/100000.0);
+  startLogging("logging");
+  
+  
+}
+
+on frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu01 
+{
+  frPDU AsdmFLC_FlexraySignalIPdu01 TargetPDU;
+  checkLogger(this.Time_ns);
+    startLogging("logging");
+  if(receivedAsdmFLC_FlexraySignalIPdu01 == 0)
+  {
+   receivedAsdmFLC_FlexraySignalIPdu01= 1;
+  }
+    //signal group: igADataRawSafe
+//  TargetPDU.msgChannel = 2;
+  setSignal(TargetNetwork::isADataRawSafeALat,SG_lateralAcceleration);
+  setSignal(TargetNetwork::isADataRawSafeALat1Qf,3  );
+  setSignal(TargetNetwork::isADataRawSafeALgt,SG_longitudinalAcceleration);
+  setSignal(TargetNetwork::isADataRawSafeALgt1Qf,3 );
+  setSignal(TargetNetwork::isADataRawSafeAVert, this.isADataRawSafeAVert);
+  setSignal(TargetNetwork::isADataRawSafeAVertQf,3);
+  SG_isADataRawSafeCntr=SG_isADataRawSafeCntr+1;
+  setSignal(TargetNetwork::isADataRawSafeCntr,SG_isADataRawSafeCntr );
+  setSignal(TargetNetwork::isADataRawSafeChks,computeADataRawSafeChks (TargetPDU) );
+  setSignal(TargetNetwork::igADataRawSafe_UB,1 );
+  if(SG_isADataRawSafeCntr==15)
+  {SG_isADataRawSafeCntr=-1;}
+  
+  //signal group: igAgDataRawSafe
+  setSignal(TargetNetwork::isAgDataRawSafeRollRate,0 );
+  setSignal(TargetNetwork::isAgDataRawSafeRollRateQf,3 );
+  setSignal(TargetNetwork::isAgDataRawSafeYawRate,SG_yawRate );
+  setSignal(TargetNetwork::isAgDataRawSafeYawRateQf,3);
+  SG_isAgDataRawSafeCntr=SG_isAgDataRawSafeCntr+1;
+  setSignal(TargetNetwork::isAgDataRawSafeCntr,SG_isAgDataRawSafeCntr);
+  setSignal(TargetNetwork::isAgDataRawSafeChks,computeAgDataRawSafeChks(TargetPDU) );
+  setSignal(TargetNetwork::igAgDataRawSafe_UB,1 );
+  if(SG_isAgDataRawSafeCntr==15)
+  {SG_isAgDataRawSafeCntr=-1;}
+  
+  //signal group:igAsyDataWithCmpSafe ******************************************* 
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeALat1Qf , 3 );
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeALatWithCmp , SG_lateralAcceleration );
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeALgt1Qf , 3);
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeGrdtOfALgt , SG_longitudinalAcceleration);
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeYawRateQf ,3 );
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeYawRateWithCmp , SG_yawRate ); 
+  SG_isAsyDataWithCmpSafeCntr=SG_isAsyDataWithCmpSafeCntr+1;
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeCntr,SG_isAsyDataWithCmpSafeCntr );
+  setSignal(TargetNetwork::isAsyDataWithCmpSafeChks , computeAsyDataWithCmpSafeChks(TargetPDU) ); 
+  setSignal(TargetNetwork::igAsyDataWithCmpSafe_UB,1 );
+  if(SG_isAsyDataWithCmpSafeCntr==15)
+  {SG_isAsyDataWithCmpSafeCntr=-1;}
+  
+  //signal group:igSteerWhlSnsr  
+  setSignal(TargetNetwork::isSteerWhlSnsrQf , 3 );
+  setSignal(TargetNetwork::isSteerWhlSnsrSteerWhlAg , SG_frontWheelAngle );
+  setSignal(TargetNetwork::isSteerWhlSnsrSteerWhlAgSpd , this.isSteerWhlSnsrSteerWhlAgSpd );
+  SG_isSteerWhlSnsrCntr=SG_isSteerWhlSnsrCntr+1;
+  setSignal(TargetNetwork::isSteerWhlSnsrCntr,SG_isSteerWhlSnsrCntr );
+  setSignal(TargetNetwork::isSteerWhlSnsrChks ,computeSteerWhlSnsrChks(TargetPDU) );
+  setSignal(TargetNetwork::igSteerWhlSnsr_UB,1 );
+  if(SG_isSteerWhlSnsrCntr==15)
+  {SG_isSteerWhlSnsrCntr=-1;}
+  
+  //signal group:igVehMtnst
+  setSignal(TargetNetwork::isVehMtnStVehMtnSt , SG_DrivingDirection );
+  SG_isVehMtnStCntr=SG_isVehMtnStCntr+1;
+  setSignal(TargetNetwork::isVehMtnStCntr,SG_isVehMtnStCntr );
+  setSignal(TargetNetwork::isVehMtnStChks ,computeVehMtnStChks(TargetPDU) );
+  setSignal(TargetNetwork::igVehMtnSt_UB ,1 );
+  if(SG_isVehMtnStCntr==15)
+  {SG_isVehMtnStCntr=-1;}  
+  
+  //signal group:igVehSpdLgt  
+  setSignal(TargetNetwork::isVehSpdLgtQf ,3 );
+  setSignal(TargetNetwork::isVehSpdLgtVehSpdLgt , SG_longitudinalSpeed );
+  SG_isVehSpdLgtCntr=SG_isVehSpdLgtCntr+1;
+  setSignal(TargetNetwork::isVehSpdLgtCntr,SG_isVehSpdLgtCntr );
+  setSignal(TargetNetwork::isVehSpdLgtChks ,computeVehSpdLgtChks(TargetPDU) );
+  setSignal(TargetNetwork::igVehSpdLgt_UB,1 );
+  if(SG_isVehSpdLgtCntr==15)
+  {SG_isVehSpdLgtCntr=-1;}
+  
+  //signal group: igWhlDirRotlRe
+  setSignal(TargetNetwork::isWhlDirRotlReLe , this.isWhlDirRotlReLe );
+  setSignal(TargetNetwork::isWhlDirRotlReRi , this.isWhlDirRotlReRi );
+  SG_isWhlDirRotlReCntr=SG_isWhlDirRotlReCntr+1;
+  setSignal(TargetNetwork::isWhlDirRotlReCntr,SG_isWhlDirRotlReCntr );
+  setSignal(TargetNetwork::isWhlDirRotlReChks ,computeWhlDirRotlReChks(TargetPDU) );
+  setSignal(TargetNetwork::igWhlDirRotlRe_UB,1 );
+  if(SG_isWhlDirRotlReCntr==15)
+  {SG_isWhlDirRotlReCntr=-1;}
+  
+  //signal group: igWhlSpdCircumlFrnt
+  setSignal(TargetNetwork::isWhlSpdCircumlFrntLe,SG_wheelSpeedFrontLeft );
+  setSignal(TargetNetwork::isWhlSpdCircumlFrntLeQf,3 );
+  setSignal(TargetNetwork::isWhlSpdCircumlFrntRi,SG_wheelSpeedFrontRight);
+  setSignal(TargetNetwork::isWhlSpdCircumlFrntRiQf,3 );
+  SG_isWhlSpdCircumlFrntCntr=SG_isWhlSpdCircumlFrntCntr+1;
+  setSignal(TargetNetwork::isWhlSpdCircumlFrntChks,SG_isWhlSpdCircumlFrntCntr );
+  setSignal(TargetNetwork::isWhlSpdCircumlFrntChks,computeWhlSpdCircumlFrntChks(TargetPDU) );
+  setSignal(TargetNetwork::igWhlSpdCircumlFrnt_UB,1 );
+  if(SG_isWhlSpdCircumlFrntCntr==15)
+  {SG_isWhlSpdCircumlFrntCntr=-1;}
+  
+  //signal group:  igWhlSpdCircumlRe
+  setSignal(TargetNetwork::isWhlSpdCircumlReLe , SG_wheelSpeedRearLeft );
+  setSignal(TargetNetwork::isWhlSpdCircumlReLeQf , 3 );
+  setSignal(TargetNetwork::isWhlSpdCircumlReRi , SG_wheelSpeedRearRight );
+  setSignal(TargetNetwork::isWhlSpdCircumlReRiQf , 3 );
+  SG_isWhlSpdCircumlReCntr=SG_isWhlSpdCircumlReCntr+1; 
+  setSignal(TargetNetwork::isWhlSpdCircumlReCntr,SG_isWhlSpdCircumlReCntr );
+  setSignal(TargetNetwork::isWhlSpdCircumlReChks ,computeWhlSpdCircumlReChks(TargetPDU) ); 
+  setSignal(TargetNetwork::igWhlSpdCircumlRe_UB,1 );
+  if(SG_isWhlSpdCircumlReCntr==15)
+  {SG_isWhlSpdCircumlReCntr=-1;}
+//************************************************************************************
+  
+
+  //update frame
+ // frUpdatePDU (TargetPDU,1,-1);
+ 
+}
+
+on frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu00 
+{
+  frPDU AsdmFLC_FlexraySignalIPdu00 TargetPDU;
+  checkLogger(this.Time_ns);
+    startLogging("logging");
+  if(receivedAsdmFLC_FlexraySignalIPdu00 == 0)
+  {
+   receivedAsdmFLC_FlexraySignalIPdu00 = 1;
+  }
+ // write("trigger");
+  //setSignal(TargetNetwork::msgChannel = 2;
+  setSignal(TargetNetwork::isFRNetworkStatusASDM2FLC,1);
+  setSignal(TargetNetwork::isAebObjectVisionID,1);
+  setSignal(TargetNetwork::isPosnFromSatltPosnVHozl,0);
+
+  setSignal(TargetNetwork::isPosnFromSatltPosnVHozl,0);
+  setSignal(TargetNetwork::isPosnFromSatltPosnVVert,0);
+  setSignal(TargetNetwork::isPosnFromSatltTiForMins,0);
+  setSignal(TargetNetwork::isPosnFromSatltPosnLgt,0);
+  setSignal(TargetNetwork::isPosnFromSatltPosnLat,0);
+  setSignal(TargetNetwork::isPosnFromSatltPosnDir,0);
+  setSignal(TargetNetwork::isPosnFromSatltPosnAlti,0);
+  setSignal(TargetNetwork::isPosnFromSatltTiForSec,0);
+  setSignal(TargetNetwork::isPosnFromSatltPosnSpd,0);
+  setSignal(TargetNetwork::isPosnFromSatltUTCForMth,0);
+  setSignal(TargetNetwork::isPosnFromSatltUTCForSec,0);
+  setSignal(TargetNetwork::isPosnFromSatltUTCForMins,0);
+  setSignal(TargetNetwork::isPosnFromSatltUTCForHr,0);
+  setSignal(TargetNetwork::isPosnFromSatltUTCForDay,0);
+  setSignal(TargetNetwork::isPosnFromSatltUTCForYr,0);
+  setSignal(TargetNetwork::isPosnFromSatltTiForMsec,0);
+  temp_PosnFromSatltCntr++;
+  setSignal(TargetNetwork::isPosnFromSatltCntr,temp_PosnFromSatltCntr);
+  if(temp_PosnFromSatltCntr==15)
+  {temp_PosnFromSatltCntr=-1;}
+  
+  setSignal(TargetNetwork::isAebObjectVisionID_UB ,1);
+  setSignal(TargetNetwork::igPosnFromSatlt_UB,1);
+  
+ // frUpdatePDU (TargetPDU,1,-1);
+
+}
+
+on frPDU AsdmFLC_FlexraySignalIPdu02 
+{
+  frPDU AsdmFLC_FlexraySignalIPdu02 TargetPDU;
+  checkLogger(this.Time_ns);
+  startLogging("logging");
+  if(receivedAsdmFLC_FlexraySignalIPdu02 == 0)
+  {
+   receivedAsdmFLC_FlexraySignalIPdu02 = 1;
+  }
+ // setSignal(TargetNetwork::msgChannel = 2;
+  //alivecounter ++
+  temp_isCamSnsrVehPrmCntr=temp_isCamSnsrVehPrmCntr+1;
+  //cntr set value
+  setSignal(TargetNetwork::isCamSnsrVehPrmCntr,temp_isCamSnsrVehPrmCntr);  
+  //CRC verification
+  setSignal(TargetNetwork::isCamSnsrVehPrmChks,computeCamSnsrVehPrmChks(TargetPDU));
+  //reset alivecounter
+  if(temp_isCamSnsrVehPrmCntr==15)
+  {temp_isCamSnsrVehPrmCntr=-1;}  
+  //the other changed signal is about ECU 
+  setSignal(TargetNetwork::isCamSnsrVehPrmCalTgtPosX,9000);//0x2328
+  setSignal(TargetNetwork::isCamSnsrVehPrmCalTgtPosY,9000);//0x2328
+  setSignal(TargetNetwork::isCamSnsrVehPrmCalTgtPosZ,9000);//0x2328
+  setSignal(TargetNetwork::isCamSnsrVehPrmDisFrAxToBump,1450);//0x5AA
+  setSignal(TargetNetwork::isCamSnsrVehPrmFrAxHgt,500);//0x1F4
+  setSignal(TargetNetwork::isCamSnsrVehPrmSelfStrGrad,0);
+  setSignal(TargetNetwork::isCamSnsrVehPrmHoodAg,1010);//0x3F2
+  setSignal(TargetNetwork::isCamSnsrVehPrmVehFrTrkWidth,7570);//0x1D92
+  setSignal(TargetNetwork::isCamSnsrVehPrmVehReTrkWidth,7700);//0x1E14
+  setSignal(TargetNetwork::isCamSnsrVehPrmVehWhlBas,9000);//0x2328
+  setSignal(TargetNetwork::isCamSnsrVehPrmVehWidth,10000);//0x2710
+  setSignal(TargetNetwork::isCamSnsrVehPrmWhlRadius,6300);//0x189C
+  setSignal(TargetNetwork::isCamSnsrVehPrmSlipAglGrad,0); 
+  //set updatebit
+  setSignal(TargetNetwork::igCamSnsrVehPrm_UB,1);
+  //update frame
+ // frUpdatePDU (TargetPDU,1,-1);
+
+}
+
+on frPDU AsdmFLC_FlexraySignalIPdu03 
+{
+  frPDU AsdmFLC_FlexraySignalIPdu03 TargetPDU;
+  checkLogger(this.Time_ns);
+  startLogging("logging");
+  if(receivedAsdmFLC_FlexraySignalIPdu03 == 0)
+  {
+   receivedAsdmFLC_FlexraySignalIPdu03 = 1;
+  }
+
+ // setSignal(TargetNetwork::msgChannel = 2;
+  //signal group:igAmbTRaw
+  setSignal(TargetNetwork::isAmbTRawAmbTVal,0);
+  setSignal(TargetNetwork::isAmbTRawQly,3);
+  setSignal(TargetNetwork::igAmbTRaw_UB,1);
+  
+  //signalGroup:igCamSnsrPose
+  setSignal(TargetNetwork::isCamSnsrPosePitchAg,1);
+  setSignal(TargetNetwork::isCamSnsrPosePosnLat,0x1F40);
+  setSignal(TargetNetwork::isCamSnsrPosePosnLgt,0x1F40);
+  setSignal(TargetNetwork::isCamSnsrPosePosnVert,0x1F40);
+  setSignal(TargetNetwork::isCamSnsrPoseRollAg,0x1E);
+  setSignal(TargetNetwork::isCamSnsrPoseYawAg,0x1E);
+  temp_isCamSnsrPoseCntr=temp_isCamSnsrPoseCntr+1;
+  setSignal(TargetNetwork::isCamSnsrPoseCntr,temp_isCamSnsrPoseCntr);
+  setSignal(TargetNetwork::isCamSnsrPoseChks ,computeCamSnsrPoseChks(TargetPDU));
+  setSignal(TargetNetwork::igCamSnsrPose_UB,1);
+  if(temp_isCamSnsrPoseCntr==15)
+  {temp_isCamSnsrPoseCntr=-1;}
+  
+ //signal group: igHznData
+  setSignal(TargetNetwork::isHznDataCountryCode,0);
+  setSignal(TargetNetwork::isHznDataCyclicCounter,0);
+  setSignal(TargetNetwork::isHznDataDrivingSide,0);
+  setSignal(TargetNetwork::isHznDataHardwareVersion,0);
+  setSignal(TargetNetwork::isHznDataMajorProtocolVersion,0);
+  setSignal(TargetNetwork::isHznDataMapProvider,0);
+  setSignal(TargetNetwork::isHznDataMapVersionYear,0);
+  setSignal(TargetNetwork::isHznDataMapVersionYearQuarter,0);
+  setSignal(TargetNetwork::isHznDataMessageType,0);
+  setSignal(TargetNetwork::isHznDataMinorProtocolSubVersion,0);
+  setSignal(TargetNetwork::isHznDataMinorProtocolVersion,0);
+  setSignal(TargetNetwork::isHznDataRegionCode,0);
+  setSignal(TargetNetwork::isHznDataSpeedUnits,0);
+  setSignal(TargetNetwork::igHznData_UB,1);
+  
+  //signal group:igTrsmActrPosnSafe
+  setSignal(TargetNetwork::isTrsmActrPosnSafeTrsmActrPosn,0);
+  temp_isTrsmActrPosnSafeTrsmActrPosnCntr=temp_isTrsmActrPosnSafeTrsmActrPosnCntr+1;
+  setSignal(TargetNetwork::isTrsmActrPosnSafeTrsmActrPosnCntr,temp_isTrsmActrPosnSafeTrsmActrPosnCntr);
+  setSignal(TargetNetwork::isTrsmActrPosnSafeTrsmActrPosnChks,computeTrsmActrPosnSafeTrsmActrPosnChks(TargetPDU));
+  setSignal(TargetNetwork::igTrsmActrPosnSafe_UB,1);
+  if(temp_isTrsmActrPosnSafeTrsmActrPosnCntr==15)
+  {temp_isTrsmActrPosnSafeTrsmActrPosnCntr=-1;}
+  
+  //signal group:igVehBattU
+  setSignal(TargetNetwork::isVehBattUSysU,120);
+  setSignal(TargetNetwork::isVehBattUSysUQf,3);
+  setSignal(TargetNetwork::igVehBattU_UB,1);
+  
+  //signal group:igVehModMngtGlbSafe1
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1CarModSts1,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1EgyLvlElecMai,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1EgyLvlElecSubtyp,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1FltEgyCnsWdSts,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1PwrLvlElecMai,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1PwrLvlElecSubtyp,0);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1UsgModSts,13);
+  temp_isVehModMngtGlbSafe1Cntr=temp_isVehModMngtGlbSafe1Cntr+1;
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1Cntr,temp_isVehModMngtGlbSafe1Cntr);
+  setSignal(TargetNetwork::isVehModMngtGlbSafe1Chks,computeVehModMngtGlbSafe1Chks(TargetPDU));
+  setSignal(TargetNetwork::igVehModMngtGlbSafe1_UB,1);
+  if(temp_isVehModMngtGlbSafe1Cntr==15)
+  {temp_isVehModMngtGlbSafe1Cntr=-1;}
+ 
+  //signal group:igVehSpdIndcd
+  setSignal(TargetNetwork::isVehSpdIndcdVehSpdIndcd,0);
+  setSignal(TargetNetwork::isVehSpdIndcdVeSpdIndcdUnit,0);
+  setSignal(TargetNetwork::igVehSpdIndcd_UB,1);
+  
+  //signal group:igVin
+  setSignal(TargetNetwork::isVinBlockNr,0);
+  setSignal(TargetNetwork::isVinVINSignalPos1,0);
+  setSignal(TargetNetwork::isVinVINSignalPos2,0);
+  setSignal(TargetNetwork::isVinVINSignalPos3,0);
+  setSignal(TargetNetwork::isVinVINSignalPos4,0);
+  setSignal(TargetNetwork::isVinVINSignalPos5,0);
+  setSignal(TargetNetwork::isVinVINSignalPos6,0);
+  setSignal(TargetNetwork::isVinVINSignalPos7,0);
+  setSignal(TargetNetwork::igVin_UB,1);
+  
+  //no group
+  setSignal(TargetNetwork::isBkpOfDstTrvld,1);
+  setSignal(TargetNetwork::isBkpOfDstTrvld_UB ,1);
+  setSignal(TargetNetwork::isCarTiGlb,0);
+  setSignal(TargetNetwork::isCarTiGlb_UB ,1);
+  setSignal(TargetNetwork::isRlyPwrDistbnCmd1WdIgnRlyCmd,0);
+  setSignal(TargetNetwork::isRlyPwrDistbnCmd1WdIgnRlyCmd_UB ,0);
+  setSignal(TargetNetwork::isVehSpdIndcdQly,3);
+  setSignal(TargetNetwork::isVehSpdIndcdQly_UB ,1);
+
+  //update frame
+ // frUpdatePDU (TargetPDU,1,-1);
+}
+//original pdu data test
+
+
+//on frPDU AsdmFlcFRNmPdu1   
+//{
+//    frPDU TargetNetwork::AsdmFlcFRNmPdu1 TargetPDU;
+//
+//    checkLogger(this.Time_ns);
+//    if (receivedAsdmFlcFRNmPdu1 == 0)
+//    {
+//        receivedAsdmFlcFRNmPdu1 = 1;
+//        write("SourceNetwork::AsdmFlcFRNmPdu1");
+//    }
+// // setSignal(TargetNetwork::msgChannel = 2;
+//  setSignal(TargetNetwork::byte(0)   = this.fr_Payload[0];
+//  setSignal(TargetNetwork::byte(1)   = this.fr_Payload[1];
+//  setSignal(TargetNetwork::byte(2)   = this.fr_Payload[2];
+//  setSignal(TargetNetwork::byte(3)   = this.fr_Payload[3];
+//  setSignal(TargetNetwork::byte(4)   = this.fr_Payload[4];
+//  setSignal(TargetNetwork::byte(5)   = this.fr_Payload[5];
+//  setSignal(TargetNetwork::byte(6)   = this.fr_Payload[6];
+//  setSignal(TargetNetwork::byte(7)   = this.fr_Payload[7];
+//
+//  frUpdatePDU(TargetPDU, 1, -1);
+//
+//}
+
+//on frPDU ASDMFlcFlexTimeSynchPdu
+//{
+//  frPDU TargetNetwork::ASDMFlcFlexTimeSynchPdu TargetPDU; 
+//  checkLogger(this.Time_ns);
+//  if (receivedASDMFlcFlexTimeSynchPdu == 0)
+//  {
+//      receivedASDMFlcFlexTimeSynchPdu = 1;
+//  }
+////  setSignal(TargetNetwork::msgChannel = 2;
+//  setSignal(TargetNetwork::byte(0) = this.fr_Payload[0];
+//  setSignal(TargetNetwork::byte(1) = this.fr_Payload[1];
+//  setSignal(TargetNetwork::byte(2) = this.fr_Payload[2];
+//  setSignal(TargetNetwork::byte(3) = this.fr_Payload[3];
+//  setSignal(TargetNetwork::byte(4) = this.fr_Payload[4];
+//  setSignal(TargetNetwork::byte(5) = this.fr_Payload[5];
+//  setSignal(TargetNetwork::byte(6) = this.fr_Payload[6];
+//  setSignal(TargetNetwork::byte(7) = this.fr_Payload[7];
+//  setSignal(TargetNetwork::byte(8) = this.fr_Payload[8];
+//  setSignal(TargetNetwork::byte(9) = this.fr_Payload[9];
+//  setSignal(TargetNetwork::byte(10) = this.fr_Payload[10];
+//  setSignal(TargetNetwork::byte(11) = this.fr_Payload[11];
+//  setSignal(TargetNetwork::byte(12) = this.fr_Payload[12];
+//  setSignal(TargetNetwork::byte(13) = this.fr_Payload[13];
+//  setSignal(TargetNetwork::byte(14) = this.fr_Payload[14];  
+//  setSignal(TargetNetwork::byte(15) = this.fr_Payload[15];
+//  
+//  frUpdatePDU(TargetPDU, 1, -1);
+//}
+
+
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr00
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu00 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr00: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu00 = 2;
+    }
+}
+
+  //TargetNetwork::AsdmFLC_FlexrayFr01 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr01
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu01 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr01: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu01 = 2;
+      
+    }
+}
+
+ //TargetNetwork::AsdmFLC_FlexrayFr02 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr02
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu02 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr02: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu02 = 2;
+
+    }
+}
+
+ //TargetNetwork::AsdmFLC_FlexrayFr04 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr03
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu03 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr03: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu03 = 2;
+    }
+}
+
+on preStop
+{
+  writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+  
+  StopLogging ("Logging");
+  loggerStarted = 0;
+  write("end time is %f",timeNow()/100000.0 );
+}
+
+on timer replayCheck
+{
+  if(ReplayState("ReplayBlock 1")!=1)
+  {
+    writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+
+    StopLogging ("Logging");
+    loggerStarted = 0;
+    
+    stop();
+
+    if(fileGetString (fileName, elcount(fileName), fileHandler)!= 0)
+    {
+      fileName[strlen(fileName)-1]=0;
+      write("File read: %s",fileName);
+      
+      snprintf(relFilePath,elcount(relFilePath),"\\conversionFolder\\%s",fileName);
+      getAbsFilePath(relFilePath, filePath, elcount(filePath));
+      write("file path reply: %s",filePath);
+      setReplayFileName("ReplayBlock 1",filePath,"asc");
+      
+      lastTimeStamp = 0;
+      replayStart("ReplayBlock 1");
+      
+      snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+      write("file path log: %s",filePath);      
+      setLogFileName("Logging",filePath);
+    }
+    else{
+      writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+
+      StopLogging ("Logging");
+      loggerStarted = 0;
+      stop();
+    }
+  }
+  else{
+   // write("replay Ongoing");
+  }
+
+  settimer(replayCheck,200);
+
+}
+////
+void checkLogger(int64 currentTimeStamp)
+{
+    if (firstTimeStamp < 0)
+    {
+        firstTimeStamp = currentTimeStamp;
+    }
+
+    
+    if (loggerStarted != 1)
+    {
+        startLogging("Logging");
+        
+        //writeToLog("First time stamp: %I64d\n", firstTimeStamp);
+
+        loggerStarted = 1;
+    }
+    
+    if (lastTimeStamp < currentTimeStamp)
+    {
+        lastTimeStamp = currentTimeStamp;
+    }
+    
+}

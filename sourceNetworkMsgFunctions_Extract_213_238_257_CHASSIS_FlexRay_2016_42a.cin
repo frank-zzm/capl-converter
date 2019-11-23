@@ -1,0 +1,294 @@
+/*@!Encoding:1252*/
+
+variables
+{
+  byte firstLeft = 0;
+  byte firstRight = 0;
+}
+
+
+on frPDU SourceNetwork::VehSpd_X_AR2
+{
+  float value = 0.0;
+  
+  checkLogger(this.Time_ns);
+  
+  value = this.VehDrvDir_Stat;
+  UpdateInternalGWstate(eDrivingDirection, value);
+  
+}
+
+on frPDU SourceNetwork::Eng_Rs_3_AR2
+{
+  float value = 0.0;
+  
+  checkLogger(this.Time_ns);
+  value = $AccelPdlPosn_Raw;;
+  
+  UpdateInternalGWstate(eAcceleratorPedal, value);
+}
+
+on frPDU SourceNetwork::VehDyn_Stat1_AR2
+{
+  float value = 0.0;
+  
+  checkLogger(this.Time_ns);
+
+  value =  $VehAccel_Y_V2 - $VehAccel_Y_Offset;
+  value = value * 100;
+  UpdateInternalGWstate(eLateralAcceleration, value); 
+
+  value = $VehAccel_X_V2 - $VehAccel_X_Offset;
+  value = value * 100;
+  UpdateInternalGWstate(eLongitudinalAcceleration, value);
+
+  value = $VehAccel_Y_Qual;
+
+  UpdateInternalGWstate(eLongitudinalAccelerationQual, value);
+}
+
+on frPDU SourceNetwork::Preview_Data_SPC_AR
+{
+  float value = 0.0;
+  
+  checkLogger(this.Time_ns);
+  value = $VehAccel_Vert;
+  value = value * 100;
+
+  UpdateInternalGWstate(eVertAcceleration, value);
+}
+
+on frPDU SourceNetwork::VehDyn_Stat2_AR2
+{
+  float value = 0.0;
+
+  checkLogger(this.Time_ns);
+
+  value = $VehYawRate_Raw - $VehYawRateOffset_V2;
+  value = value * 0.0174533 * 10000;
+  UpdateInternalGWstate(eYawRate, value);
+  //write("YawRate DAI = %f", value);
+  
+  value = this.VehYawRate_Raw_Qual;
+  UpdateInternalGWstate(eYawRateQual, value);
+  }
+
+on frPDU SourceNetwork::IC_BasicInfo_AR2
+{
+  float value = 0.0;
+  
+  checkLogger(this.Time_ns);
+  value = $AirTemp_Outsd_Disp;
+  
+  UpdateInternalGWstate(eAmbientTemperature, value);
+}
+
+on frPDU SourceNetwork::Wiper_Stat_AR
+{
+  float value = 0.0;
+  
+  checkLogger(this.Time_ns);
+  value = this.Wpr_Stat;
+  
+  UpdateInternalGWstate(eWiperStatus, value);
+}
+
+
+on frPDU SourceNetwork::Whl_Lt_Stat_AR2
+{
+  float longitudinalSpeed = 0.0;
+  float wheelCircumference = 0.0;
+  float rpm = 0.0;
+  float value = 0.0;
+  float qualValue = 0.0;
+  
+  checkLogger(this.Time_ns);
+
+  if (firstLeft == 0)
+  {
+    firstLeft = 1;
+  }
+  
+  if ((firstLeft == 0) || (firstRight == 0))
+  {
+    return;
+  }
+
+  wheelCircumference = PAR_vehicleCoding_wheelRadius*2*pi;
+  
+  if(PAR_vehicleCoding_driveWheels == 1)
+  {
+    rpm = ($WhlRPM_RL + $WhlRPM_RR) / 2;
+    if (($WhlRPM_RL_Qual == 2) && ($WhlRPM_RR_Qual == 2))
+    {
+        qualValue = 2.0;
+    }
+    else
+    {
+        qualValue = 0.0;
+    }
+    
+    if ($WhlDir_RR_Stat == 1 && $WhlDir_RL_Stat == 1)
+           longitudinalSpeed = (wheelCircumference * rpm)/60;
+        else if ($WhlDir_RR_Stat == 2 && $WhlDir_RL_Stat == 2)
+           longitudinalSpeed = -1 *((wheelCircumference * rpm / 60));
+        else
+           longitudinalSpeed = 0;
+  }
+  else{
+    rpm = ($WhlRPM_FL + $WhlRPM_FR) / 2;
+    if (($WhlRPM_FL_Qual == 2) && ($WhlRPM_FR_Qual == 2))
+    {
+        qualValue = 2.0;
+    }
+    else
+    {
+        qualValue = 0.0;
+    }
+
+    if ($WhlDir_FR_Stat == 1 && $WhlDir_FL_Stat == 1)
+           longitudinalSpeed = (wheelCircumference * rpm)/60;
+        else if ($WhlDir_FR_Stat == 2 && $WhlDir_FL_Stat == 2)
+           longitudinalSpeed = -1 *((wheelCircumference * rpm / 60));
+        else
+           longitudinalSpeed = 0;
+  }
+
+  value = longitudinalSpeed * 100;
+  //@sysvar::UserVariables::speed = _round(longitudinalSpeed);
+  UpdateInternalGWstate(eLongitudinalSpeed, value);
+
+  //qualValue = this.VehSpd_X_Qual;
+  UpdateInternalGWstate(eLongitudinalSpeedQual, qualValue);
+
+  value = $WhlRPM_FR;
+  UpdateInternalGWstate(eWheelSpeedFR, value);
+  value = $WhlRPM_FL;
+  UpdateInternalGWstate(eWheelSpeedFL, value);
+  value = $WhlRPM_RR;
+  UpdateInternalGWstate(eWheelSpeedRR, value);
+  value = $WhlRPM_RL;
+  UpdateInternalGWstate(eWheelSpeedRL, value);
+
+  if ($WhlRPM_FL_Qual == 2 && $WhlRPM_FR_Qual == 2
+      && $WhlRPM_RL_Qual == 2 && $WhlRPM_RR_Qual == 2)
+  {
+    value = 2;
+  }
+  else {
+    value = 0;
+  }
+  UpdateInternalGWstate(eWheelSpeedQual, value);
+}
+
+on frPDU SourceNetwork::Whl_Rt_Stat_AR2
+{
+  float longitudinalSpeed = 0.0;
+  float wheelCircumference = 0.0;
+  float rpm = 0.0;
+  float value = 0.0;
+  float qualValue = 0.0;
+  
+  checkLogger(this.Time_ns);
+  
+  if (firstRight == 0)
+  {
+    firstRight = 1;
+  }
+  
+  if ((firstLeft == 0) || (firstRight == 0))
+  {
+    return;
+  }
+
+  wheelCircumference = PAR_vehicleCoding_wheelRadius*2*pi;
+  
+  if(PAR_vehicleCoding_driveWheels == 1)
+  {
+    rpm = ($WhlRPM_RL + $WhlRPM_RR) / 2;
+    if (($WhlRPM_RL_Qual == 2) && ($WhlRPM_RR_Qual == 2))
+    {
+        qualValue = 2.0;
+    }
+    else
+    {
+        qualValue = 0.0;
+    }
+    
+    if ($WhlDir_RR_Stat == 1 && $WhlDir_RL_Stat == 1)
+           longitudinalSpeed = (wheelCircumference * rpm)/60;
+        else if ($WhlDir_RR_Stat == 2 && $WhlDir_RL_Stat == 2)
+           longitudinalSpeed = -1 *((wheelCircumference * rpm / 60));
+        else
+           longitudinalSpeed = 0;
+  }
+  else{
+    rpm = ($WhlRPM_FL + $WhlRPM_FR) / 2;
+    if (($WhlRPM_FL_Qual == 2) && ($WhlRPM_FR_Qual == 2))
+    {
+        qualValue = 2.0;
+    }
+    else
+    {
+        qualValue = 0.0;
+    }
+
+    if ($WhlDir_FR_Stat == 1 && $WhlDir_FL_Stat == 1)
+           longitudinalSpeed = (wheelCircumference * rpm)/60;
+        else if ($WhlDir_FR_Stat == 2 && $WhlDir_FL_Stat == 2)
+           longitudinalSpeed = -1 *((wheelCircumference * rpm / 60));
+        else
+           longitudinalSpeed = 0;
+  }
+
+  value = longitudinalSpeed * 100;
+  //@sysvar::UserVariables::speed = _round(longitudinalSpeed);
+  UpdateInternalGWstate(eLongitudinalSpeed, value);
+
+  //qualValue = this.VehSpd_X_Qual;
+  UpdateInternalGWstate(eLongitudinalSpeedQual, qualValue);
+
+}
+
+on frPDU SourceNetwork::STA_Rs1_AR2
+{
+  float value = 0.0;
+  
+  if (($EPS_FtWhlAngl_Stat == 0) || ($EPS_FtWhlAngl_Stat == 1))
+  {
+    value = $EPS_FtWhlAngl - $EPS_FtWhlAngl_Offset;
+  }
+  else
+  {
+    value = 0.0;
+  }
+
+  UpdateInternalGWstate(eFrontWheelAngle, value);
+
+  // 0 - HIGH_PRECISION, 1 - LOW_PRECISION, 2 - NOT_INIT, 3 - SNA
+  if (this.EPS_FtWhlAngl_Stat == 0 || this.EPS_FtWhlAngl_Stat == 1) {
+    value = 1;
+  }
+  else {
+    value = 0;
+  }
+
+  UpdateInternalGWstate(eFrontWheelAngleQual, value);
+}
+
+on frPDU SourceNetwork::SCCM_Sw_Stat_AR2
+{
+  byte value = 0;
+
+  value = $TurnIndLvr_Stat;
+
+  UpdateInternalGWstate(eTurnIndicator, value);
+}
+
+on frPDU SourceNetwork::BrkSys_Stat_AR2
+{
+  word value = 0;
+  value = $BrkTrq_D_V2;
+
+  UpdateInternalGWstate(eBrakeTorque, value);
+}

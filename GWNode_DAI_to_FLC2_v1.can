@@ -1,0 +1,108 @@
+/*@!Encoding:1252*/
+includes
+{
+  #include "gwFunctionsAndVariables.cin"
+  #include "parameterValues.cin"
+  #include "fileToConvert.cin" // Defines variable "fileToConvert"
+  #include "sourceNetworkMsgFunctions_Extract_213_238_257_CHASSIS_FlexRay_2016_42a.cin"
+  #include "oemTargetNetworkMsgFunctions_Extract_SPA2910_FLC2MAIN21_180420_AR-4.2.2_Unflattened_WithSparePNC_addedSynchSignalAndNm.cin"
+}
+
+variables
+{
+
+  const dword cFrNullFlag = 0x400; // only for VN
+  
+  msTimer replayCheck;
+  char fileName[500], filePath[1000], relFilePath[500];
+  dword fileHandler;
+  byte loggerStarted = 0;
+  int64 lastTimeStamp = 0;
+  int64 firstTimeStamp = -1;
+  
+  byte synchInfoReceived = 0;
+  byte synchLog = 0;
+  
+  //frFrame TargetNetwork::AsdmMid2FlxTimeSynchFr targetTimeSynchFr;
+  
+  byte receivedAsdmMid2FlxSignalIPDU01 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU02 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU04 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU05 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU06 = 0;
+  byte receivedAsdmMid2FlxNmPdu1 = 0;
+  byte receivedTimeSynchPduMid2Flx0 = 0;
+  byte receivedAsdmPrototypeMid2FlxSignalIPDU01 = 0;
+  
+  byte hardcodedParameters = 0;
+  
+}
+
+on start
+{
+  setReplayFileName("ReplayBlock 1",fileToConvert,"asc");
+
+  //snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+  write("file path log: %s", loggingFile);      
+  setLogFileName("Logging", loggingFile);
+
+  lastTimeStamp = 0;
+  replayStart("ReplayBlock 1");
+
+  setTimer(replayCheck, 2000);
+}
+
+on preStop
+{
+  writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+  
+  StopLogging ("Logging");
+  loggerStarted = 0;
+}
+
+on timer replayCheck
+{
+  if(ReplayState("ReplayBlock 1")!=1)
+  {
+    writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+
+    StopLogging ("Logging");
+    loggerStarted = 0;
+    stop();
+
+  }
+  else{
+    //write("replay Ongoing");
+  }
+
+  settimer(replayCheck,200);
+
+}
+
+void checkLogger(int64 currentTimeStamp)
+{
+    if (firstTimeStamp < 0)
+    {
+        firstTimeStamp = currentTimeStamp;
+    }
+
+    
+    if (loggerStarted != 1)
+    {
+        startLogging("Logging");
+        
+        //writeToLog("First time stamp: %I64d\n", firstTimeStamp);
+
+        loggerStarted = 1;
+    }
+    
+    if (lastTimeStamp < currentTimeStamp)
+    {
+        lastTimeStamp = currentTimeStamp;
+    }
+    
+}
+
+
+
+

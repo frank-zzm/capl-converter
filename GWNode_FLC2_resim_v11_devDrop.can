@@ -1,0 +1,635 @@
+/*@!Encoding:1252*/
+includes
+{
+  #include "fileToConvert.cin" // Defines variable "fileToConvert"
+}
+
+variables
+{
+  const dword cFrNullFlag = 0x400; // only for VN
+  
+  msTimer replayCheck;
+  char fileName[500], filePath[1000], relFilePath[500];
+  dword fileHandler;
+  byte loggerStarted = 0;
+  int64 lastTimeStamp = 0;
+  int64 firstTimeStamp = -1;
+  
+  byte synchInfoReceived = 0;
+  byte synchLog = 0;
+  
+  frFrame TargetNetwork::AsdmMid2FlxTimeSynchFr targetTimeSynchFr;
+  
+  byte receivedAsdmMid2FlxSignalIPDU01 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU02 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU04 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU05 = 0;
+  byte receivedAsdmMid2FlxSignalIPDU06 = 0;
+  byte receivedAsdmMid2FlxNmPdu1 = 0;
+  byte receivedTimeSynchPduMid2Flx0 = 0;
+  byte receivedAsdmPrototypeMid2FlxSignalIPDU01 = 0;
+  
+  byte hardcodedParameters = 0;
+
+  const byte CRC8_H2F_START_VALUE = 0xff;
+  const byte CRC8_START_VALUE     = 0xff;
+  const byte CRC8_POLYNOMIAL      = 0x2f;
+  const byte CRC8_H2F_POLYNOMIAL  = 0x2f;
+  const byte CRC8_XOR             = 0xff;
+  const byte CRC8_H2F_XOR         = 0xff;
+  
+  byte dataIDlist[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  byte testVector[14] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+}
+
+on start
+{
+  setReplayFileName("ReplayBlock 1",fileToConvert,"asc");
+
+  //snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+  write("file path log: %s", loggingFile);      
+  setLogFileName("Logging", loggingFile);
+
+  lastTimeStamp = 0;
+  replayStart("ReplayBlock 1");
+
+  setTimer(replayCheck, 2000);
+}
+
+on preStop
+{
+  writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+  
+  StopLogging ("Logging");
+  loggerStarted = 0;
+}
+
+on timer replayCheck
+{
+  if(ReplayState("ReplayBlock 1")!=1)
+  {
+    writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+
+    StopLogging ("Logging");
+    loggerStarted = 0;
+    stop();
+
+//    receivedAsdmMid2FlxSignalIPDU01 = 0;
+//    receivedAsdmMid2FlxSignalIPDU02 = 0;
+//    receivedAsdmMid2FlxSignalIPDU04 = 0;
+//    receivedAsdmMid2FlxSignalIPDU05 = 0;
+//    receivedAsdmMid2FlxSignalIPDU06 = 0;
+//    receivedAsdmMid2FlxNmPdu1 = 0;
+//    receivedTimeSynchPduMid2Flx0 = 0;
+//    receivedAsdmPrototypeMid2FlxSignalIPDU01 = 0;
+//
+//    if(fileGetString (fileName, elcount(fileName), fileHandler)!= 0)
+//    {
+//      fileName[strlen(fileName)-1]=0;
+//      write("File read: %s",fileName);
+//      
+//      snprintf(relFilePath,elcount(relFilePath),"\\conversionFolder\\%s",fileName);
+//      getAbsFilePath(relFilePath, filePath, elcount(filePath));
+//      write("file path reply: %s",filePath);
+//      setReplayFileName("ReplayBlock 1",filePath,"asc");
+//      
+//      lastTimeStamp = 0;
+//      replayStart("ReplayBlock 1");
+//      
+//      snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+//      write("file path log: %s",filePath);      
+//      setLogFileName("Logging",filePath);
+//    }
+//    else{
+//      writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+//
+//      StopLogging ("Logging");
+//      loggerStarted = 0;
+//      stop();
+//    }
+  }
+  else{
+    //write("replay Ongoing");
+  }
+
+  settimer(replayCheck,200);
+
+}
+
+void checkLogger(int64 currentTimeStamp)
+{
+    if (firstTimeStamp < 0)
+    {
+        firstTimeStamp = currentTimeStamp;
+    }
+
+    
+    if (loggerStarted != 1)
+    {
+        startLogging("Logging");
+        
+        //writeToLog("First time stamp: %I64d\n", firstTimeStamp);
+
+        loggerStarted = 1;
+    }
+    
+    if (lastTimeStamp < currentTimeStamp)
+    {
+        lastTimeStamp = currentTimeStamp;
+    }
+    
+}
+
+  
+on frPDU SourceNetwork::AsdmMid2FlxSignalIPDU01
+{
+    frPDU TargetNetwork::AsdmMid2FlxSignalIPDU01 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmMid2FlxSignalIPDU01 == 0)
+    {
+        receivedAsdmMid2FlxSignalIPDU01 = 1;
+    }
+  
+    targetPDU.isFRNetworkStatusMid2 = this.isFRNetworkStatusMid2;
+    targetPDU.isYawRateWithCmp = this.isYawRateWithCmp;
+    targetPDU.isGrdtOfALgt = this.isGrdtOfALgt;
+    targetPDU.isALat1Qf2 = this.isALat1Qf2;
+    targetPDU.isAsyDataWithCmpSafeChks = this.isAsyDataWithCmpSafeChks;
+    targetPDU.isYawRate1Qf2 = this.isYawRate1Qf2;
+    targetPDU.isALgt1Qf2 = this.isALgt1Qf2;
+    targetPDU.isAsyDataWithCmpSafeCntr = this.isAsyDataWithCmpSafeCntr;
+    targetPDU.isALatWithCmp = this.isALatWithCmp;
+    targetPDU.isPinionSteerAg1 = this.isPinionSteerAg1;
+
+    targetPDU.isBkpOfDstTrvld = this.isBkpOfDstTrvld;
+    targetPDU.isPinionSteerAg1Qf = this.isPinionSteerAg1Qf;
+    targetPDU.isVehModMngtGlbSafe1Chks = this.isVehModMngtGlbSafe1Chks;
+    targetPDU.isUsgModSts = this.isUsgModSts;
+    targetPDU.isVehModMngtGlbSafe1Cntr = this.isVehModMngtGlbSafe1Cntr;
+    targetPDU.isPwrLvlElecMai = this.isPwrLvlElecMai;
+    targetPDU.isPwrLvlElecSubtyp = this.isPwrLvlElecSubtyp;
+    targetPDU.isEgyLvlElecMai = this.isEgyLvlElecMai;
+    targetPDU.isEgyLvlElecSubtyp = this.isEgyLvlElecSubtyp;
+    targetPDU.isFltEgyCnsWdSts = this.isFltEgyCnsWdSts;
+    targetPDU.isCarModSubtypWdCarModSubtyp = this.isCarModSubtypWdCarModSubtyp;
+    targetPDU.isCarModSts1 = this.isCarModSts1;
+    targetPDU.isVehMtnStSafe = this.isVehMtnStSafe;
+    targetPDU.isVehMtnStCntr = this.isVehMtnStCntr;
+    targetPDU.isVehMtnStChks = this.isVehMtnStChks;
+    targetPDU.isVehSpdLgtSafe = this.isVehSpdLgtSafe;
+    targetPDU.isVehSpdLgtSafeChks = this.isVehSpdLgtSafeChks;
+    targetPDU.isVehSpdLgtSafeQf = this.isVehSpdLgtSafeQf;
+    targetPDU.isVehSpdLgtSafeCntr = this.isVehSpdLgtSafeCntr;
+    targetPDU.isWindDewTUpprDewT = this.isWindDewTUpprDewT;
+    targetPDU.isWindDewTUpprDewTQf = this.isWindDewTUpprDewTQf;
+    targetPDU.isWinWshrLvrCmd = this.isWinWshrLvrCmd;
+    targetPDU.isWindTWindT = this.isWindTWindT;
+    targetPDU.isAhbcIndcnDisp = this.isAhbcIndcnDisp;
+    targetPDU.isWindTWindTQf = this.isWindTWindTQf;
+    targetPDU.isAmbTRawVal = this.isAmbTRawVal;
+    targetPDU.isAmbTRawQly = this.isAmbTRawQly;
+    targetPDU.isRlyPwrDistbnCmd1WdPreBattSaveCmd = this.isRlyPwrDistbnCmd1WdPreBattSaveCmd;
+    
+    // Set update bits
+    targetPDU.igAmbTRaw_UB = this.igAmbTRaw_UB;
+    targetPDU.igAsyDataWithCmpSafe_UB = this.igAsyDataWithCmpSafe_UB;
+    targetPDU.igPinionSteerAg1Group_UB = this.igPinionSteerAg1Group_UB;
+    targetPDU.igVehModMngtGlbSafe1_UB = this.igVehModMngtGlbSafe1_UB;
+    targetPDU.igVehMtnStSafeGroup_UB = this.igVehMtnStSafeGroup_UB;
+    targetPDU.igVehSpdLgtSafeGroup_UB = this.igVehSpdLgtSafeGroup_UB;
+    targetPDU.igWindDewTUppr_UB = this.igWindDewTUppr_UB;
+    targetPDU.igWindTGroup_UB = this.igWindTGroup_UB;
+    targetPDU.isAhbcIndcnDisp_UB = this.isAhbcIndcnDisp_UB;
+    targetPDU.isBkpOfDstTrvld_UB = this.isBkpOfDstTrvld_UB;
+    targetPDU.isRlyPwrDistbnCmd1WdPreBattSaveCmd_UB = this.isRlyPwrDistbnCmd1WdPreBattSaveCmd_UB;
+
+    
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+on frPDU SourceNetwork::AsdmMid2FlxSignalIPDU02
+{
+    frPDU TargetNetwork::AsdmMid2FlxSignalIPDU02 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if(receivedAsdmMid2FlxSignalIPDU02 == 0)
+    {
+        receivedAsdmMid2FlxSignalIPDU02 = 1;
+    }
+
+    targetPDU.isCarTiGlb = this.isCarTiGlb;
+    targetPDU.isWipgInfoWipgSpdInfo = this.isWipgInfoWipgSpdInfo;
+    targetPDU.isWipgInfoWiprInWipgAr = this.isWipgInfoWiprInWipgAr;
+    targetPDU.isWipgInfoWiprActv = this.isWipgInfoWiprActv;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte0 = this.isTiSyncMid2FlexRayByte0;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte1 = this.isTiSyncMid2FlexRayByte1;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte12to15 = this.isTiSyncMid2FlexRayByte12to15;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte2 = this.isTiSyncMid2FlexRayByte2;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte3 = this.isTiSyncMid2FlexRayByte3;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte4 = this.isTiSyncMid2FlexRayByte4;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte5 = this.isTiSyncMid2FlexRayByte5;
+    // removed in SPA2910 targetPDU.isTiSyncMid2FlexRayByte6to11 = this.isTiSyncMid2FlexRayByte6to11;
+    targetPDU.isDrvrDecelReq = this.isDrvrDecelReq;
+    targetPDU.isALgtStdFromWhlSpdSafeCntr = this.isALgtStdFromWhlSpdSafeCntr;
+    targetPDU.isALgtStdFromWhlSpdSafeQf = this.isALgtStdFromWhlSpdSafeQf;
+    targetPDU.isALgtStdFromWhlSpdSafeChks = this.isALgtStdFromWhlSpdSafeChks;
+    targetPDU.isALgtStdFromWhlSpdSafe = this.isALgtStdFromWhlSpdSafe;
+    targetPDU.isCllsnAidSnvtySeldPen = this.isCllsnAidSnvtySeldPen;
+    targetPDU.isCllsnAidSnvtySeldSts = this.isCllsnAidSnvtySeldSts;
+  
+    //
+    // New signals in SPA2910
+    //
+    targetPDU.isSteerAgFrntCntr = 0;
+    targetPDU.isSteerAgFrntChks = 0;
+    targetPDU.isSteerAgFrntSteerAgFrnt = 0;
+    targetPDU.isSteerAgFrntSteerAgFrntQly = 0;
+  
+    // Set update bits
+    targetPDU.igALgtStdFromWhlSpdSafeGroup_UB = this.igALgtStdFromWhlSpdSafeGroup_UB;
+    targetPDU.igCllsnAidSnvtySeld_UB = this.igCllsnAidSnvtySeld_UB;
+    
+    // Since the signal doesn't exist in previous SPA-version and values are hard coded the update bit is set to 0, since the values shouldn't be used
+    targetPDU.igSteerAgFrnt_UB = 0;
+    
+    targetPDU.igWipgInfo_UB = this.igWipgInfo_UB;
+    targetPDU.isCarTiGlb_UB = this.isCarTiGlb_UB;
+    targetPDU.isDrvrDecelReq_UB = this.isDrvrDecelReq_UB;
+
+    
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+
+on frPDU SourceNetwork::AsdmMid2FlxNmPdu1
+{
+    frPDU TargetNetwork::AsdmMid2FlxNmPdu1ByteArray targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmMid2FlxNmPdu1 == 0)
+    {
+        receivedAsdmMid2FlxNmPdu1 = 1;
+        write("SourceNetwork::AsdmMid2FlxNmPdu1");
+    }
+
+  targetPDU.Byte0 = this.fr_Payload[0];
+  targetPDU.Byte1 = this.fr_Payload[1];
+  targetPDU.Byte2 = this.fr_Payload[2];
+  targetPDU.Byte3 = this.fr_Payload[3];
+  targetPDU.Byte4 = this.fr_Payload[4];
+  targetPDU.Byte5 = this.fr_Payload[5];
+  targetPDU.Byte6 = this.fr_Payload[6];
+  targetPDU.Byte7 = this.fr_Payload[7];
+
+  frUpdatePDU(targetPDU, 1, -1);
+
+}
+
+on frPDU SourceNetwork::AsdmMid2FlxSignalIPDU04
+{
+    frPDU TargetNetwork::AsdmMid2FlxSignalIPDU04 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmMid2FlxSignalIPDU04 == 0)
+    {
+        receivedAsdmMid2FlxSignalIPDU04 = 1;
+    }
+
+    targetPDU.isDataStoreEveTrigPrio = this.isDataStoreEveTrigPrio;
+    targetPDU.isDataStoreEveTrigTrigActv = this.isDataStoreEveTrigTrigActv;
+    targetPDU.isDataStoreEveTrigPreTrigTi = this.isDataStoreEveTrigPreTrigTi;
+    targetPDU.isDataStoreEveTrigPostTrigTi = this.isDataStoreEveTrigPostTrigTi;
+    targetPDU.isDataStoreEveTrigBuf = this.isDataStoreEveTrigBuf;
+    targetPDU.isBrkPedlPsdCntr = this.isBrkPedlPsdCntr;
+    targetPDU.isBrkPedlPsdQf = this.isBrkPedlPsdQf;
+    targetPDU.isBrkPedlPsd = this.isBrkPedlPsd;
+    targetPDU.isBrkPedlNotPsdSafe = this.isBrkPedlNotPsdSafe;
+    targetPDU.isBrkPedlPsdChks = this.isBrkPedlPsdChks;
+    targetPDU.isADataRawSafeChks = this.isADataRawSafeChks;
+    targetPDU.isALgt1Qf1 = this.isALgt1Qf1;
+    targetPDU.isALat1Qf1 = this.isALat1Qf1;
+    targetPDU.isADataRawSafeCntr = this.isADataRawSafeCntr;
+    targetPDU.isALat1 = this.isALat1;
+    targetPDU.isAVert2Qf1 = this.isAVert2Qf1;
+    targetPDU.isALgt1 = this.isALgt1;
+    targetPDU.isAVert2 = this.isAVert2;
+    targetPDU.isRollRate1 = this.isRollRate1;
+    targetPDU.isYawRate1 = this.isYawRate1;
+    targetPDU.isAgDataRawSafeChks = this.isAgDataRawSafeChks;
+    targetPDU.isYawRate1Qf1 = this.isYawRate1Qf1;
+    targetPDU.isRollRate1Qf1 = this.isRollRate1Qf1;
+    targetPDU.isAgDataRawSafeCntr = this.isAgDataRawSafeCntr;
+    targetPDU.isSteerWhlAgSafe = this.isSteerWhlAgSafe;
+    targetPDU.isSteerWhlAgSpdSafe = this.isSteerWhlAgSpdSafe;
+    targetPDU.isSteerWhlSnsrQf = this.isSteerWhlSnsrQf;
+    targetPDU.isSteerWhlSnsrSafeChks = this.isSteerWhlSnsrSafeChks;
+    targetPDU.isSteerWhlSnsrSafeCntr = this.isSteerWhlSnsrSafeCntr;
+    targetPDU.isBrkPedlValBrkPedlVal = this.isBrkPedlValBrkPedlVal;
+    targetPDU.isCtryForRoadSgnInfo = this.isCtryForRoadSgnInfo;
+    targetPDU.isBrkPedlValBrkPedlValQf = this.isBrkPedlValBrkPedlValQf;
+    targetPDU.isAccrPedlRat = this.isAccrPedlRat;
+    targetPDU.isIndcrTurnSts1WdSts = this.isIndcrTurnSts1WdSts;
+    targetPDU.isAhbcBeamFmtRi = this.isAhbcBeamFmtRi;
+    targetPDU.isAhbcBeamFmtLe = this.isAhbcBeamFmtLe;
+  
+    // Set update bits
+    targetPDU.igADataRawSafe_UB = this.igADataRawSafe_UB;
+    targetPDU.igAgDataRawSafe_UB = this.igAgDataRawSafe_UB;
+    targetPDU.igBrkPedlPsdSafeGroup_UB = this.igBrkPedlPsdSafeGroup_UB;
+    targetPDU.igBrkPedlVal_UB = this.igBrkPedlVal_UB;
+    targetPDU.igDataStoreEveTrig_UB = this.igDataStoreEveTrig_UB;
+    targetPDU.igSteerWhlSnsr_UB = this.igSteerWhlSnsr_UB;
+    targetPDU.isAccrPedlRat_UB = this.isAccrPedlRat_UB;
+    targetPDU.isAhbcBeamFmtLe_UB = this.isAhbcBeamFmtLe_UB;
+    targetPDU.isAhbcBeamFmtRi_UB = this.isAhbcBeamFmtRi_UB;
+    targetPDU.isCtryForRoadSgnInfo_UB = this.isCtryForRoadSgnInfo_UB;
+    targetPDU.isIndcrTurnSts1WdSts_UB = this.isIndcrTurnSts1WdSts_UB;
+    
+    
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+on frPDU SourceNetwork::AsdmMid2FlxSignalIPDU05
+{
+    frPDU TargetNetwork::AsdmMid2FlxSignalIPDU05 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmMid2FlxSignalIPDU05 == 0)
+    {
+        receivedAsdmMid2FlxSignalIPDU05 = 1;
+    }
+
+    targetPDU.isCamSnsrVehPrmCntr = this.isCamSnsrVehPrmCntr;
+    targetPDU.isCamSnsrVehPrmChks = this.isCamSnsrVehPrmChks;
+    targetPDU.isCamSnsrVehPrmPinionAgToWhlAgFac = this.isCamSnsrVehPrmPinionAgToWhlAgFac;
+    targetPDU.isCamSnsrVehPrmAxleHeiRe = this.isCamSnsrVehPrmAxleHeiRe;
+    targetPDU.isCamSnsrVehPrmDstLatToHdLamp = this.isCamSnsrVehPrmDstLatToHdLamp;
+    targetPDU.isCamSnsrVehPrmDstLatToWhlCentr = this.isCamSnsrVehPrmDstLatToWhlCentr;
+    targetPDU.isCamSnsrVehPrmDstLgtToBmpFrnt = this.isCamSnsrVehPrmDstLgtToBmpFrnt;
+    targetPDU.isCamSnsrVehPrmDstLongToHdLamp = this.isCamSnsrVehPrmDstLongToHdLamp;
+    targetPDU.isCamSnsrVehPrmDstVertToHdLamp = this.isCamSnsrVehPrmDstVertToHdLamp;
+    targetPDU.isCamSnsrVehPrmHoodAg = this.isCamSnsrVehPrmHoodAg;
+    targetPDU.isCamSnsrVehPrmRsdAg1 = this.isCamSnsrVehPrmRsdAg1;
+    targetPDU.isCamSnsrVehPrmRsdAg2 = this.isCamSnsrVehPrmRsdAg2;
+    targetPDU.isCamSnsrVehPrmRsdDst1 = this.isCamSnsrVehPrmRsdDst1;
+    targetPDU.isCamSnsrVehPrmRsdDst2 = this.isCamSnsrVehPrmRsdDst2;
+    targetPDU.isCamSnsrVehPrmRsdDst3 = this.isCamSnsrVehPrmRsdDst3;
+    targetPDU.isCamSnsrVehPrmVehLen = this.isCamSnsrVehPrmVehLen;
+    if (hardcodedParameters == 1)
+    {
+        targetPDU.isCamSnsrVehPrmVehWhlBas = this.isCamSnsrVehPrmVehWhlBas;
+        targetPDU.isCamSnsrVehPrmVehWidth = this.isCamSnsrVehPrmVehWidth;
+    }
+    else
+    {
+        targetPDU.isCamSnsrVehPrmVehWhlBas = this.isCamSnsrVehPrmVehWhlBas;
+        targetPDU.isCamSnsrVehPrmVehWidth = this.isCamSnsrVehPrmVehWidth;
+    }
+  
+    // Set update bits
+    targetPDU.igCamSnsrVehPrm_UB = this.igCamSnsrVehPrm_UB;
+
+    
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+on frPDU SourceNetwork::AsdmMid2FlxSignalIPDU06
+{
+    frPDU TargetNetwork::AsdmMid2FlxSignalIPDU06 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmMid2FlxSignalIPDU06 == 0)
+    {
+        receivedAsdmMid2FlxSignalIPDU06 = 1;
+    }
+
+    targetPDU.isAhbcVers = this.isAhbcVers;
+    targetPDU.isCamExpectedEcuVrnt = this.isCamExpectedEcuVrnt;
+    targetPDU.isCamSnsrPoseCntr = this.isCamSnsrPoseCntr;
+    targetPDU.isCamSnsrPoseChks = this.isCamSnsrPoseChks;
+    targetPDU.isCamSnsrPosePitchAg = this.isCamSnsrPosePitchAg;
+    targetPDU.isCamSnsrPosePosnLat = this.isCamSnsrPosePosnLat;
+    targetPDU.isCamSnsrPosePosnLgt = this.isCamSnsrPosePosnLgt;
+    targetPDU.isCamSnsrPosePosnVert = this.isCamSnsrPosePosnVert;
+    targetPDU.isCamSnsrPoseRollAg = this.isCamSnsrPoseRollAg;
+    targetPDU.isCamSnsrPoseYawAg = this.isCamSnsrPoseYawAg;
+    targetPDU.isLiExtReq1WdReq5IdPen = this.isLiExtReq1WdReq5IdPen;
+    targetPDU.isLiExtReq1WdReq5SlowNormFast = this.isLiExtReq1WdReq5SlowNormFast;
+    targetPDU.isVehBattUSysUQf = this.isVehBattUSysUQf;
+    targetPDU.isVehBattUSysU = this.isVehBattUSysU;
+  
+    //
+    // New signals in SPA2910
+    //
+    targetPDU.isHmiDefrstMaxReq = 0;
+    targetPDU.isHvacAirMFlowEstimd = 0;
+    targetPDU.isVinBlk = 0;
+    targetPDU.isVinPosn1 = 0;
+    targetPDU.isVinPosn2 = 0;
+    targetPDU.isVinPosn3 = 0;
+    targetPDU.isVinPosn4 = 0;
+    targetPDU.isVinPosn5 = 0;
+    targetPDU.isVinPosn6 = 0;
+    targetPDU.isVinPosn7 = 0;
+  
+    // Set update bits
+    targetPDU.igCamSnsrPose_UB = this.igCamSnsrPose_UB;
+    targetPDU.igLiExtReq1WdReq5_UB = this.igLiExtReq1WdReq5_UB;
+    targetPDU.igVehBattUGroup_UB = this.igVehBattUGroup_UB;
+    targetPDU.isAhbcVers_UB = this.isAhbcVers_UB;
+    
+    // Since the signal doesn't exist in previous SPA-version and values are hard coded the update bit is set to 0, since the values shouldn't be used
+    targetPDU.igVin_UB = 0;
+    targetPDU.isHvacAirMFlowEstimd_UB = 0;
+    
+
+    targetPDU.isCamExpectedEcuVrnt_UB = this.isCamExpectedEcuVrnt_UB;
+    
+    
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+
+on frPDU SourceNetwork::TimeSynchPduMid2Flx0
+{
+  frPDU TimeSynchPduMid2FlxByteArray targetPDU;
+  long res = 0;
+  byte i = 0;
+  byte n = 0;
+  byte remainder = 0;
+  byte dataValue = 0;
+  byte crc = 0;
+  byte sc = 0;
+  
+  
+  checkLogger(this.Time_ns);
+  if (receivedTimeSynchPduMid2Flx0 == 0)
+  {
+      receivedTimeSynchPduMid2Flx0 = 1;
+  }
+  
+  targetPDU.TimeSynchByte0 = this.fr_Payload[0];
+  targetPDU.TimeSynchByte1 = this.fr_Payload[1];
+  targetPDU.TimeSynchByte2 = this.fr_Payload[2];
+  targetPDU.TimeSynchByte3 = this.fr_Payload[3];
+  targetPDU.TimeSynchByte4 = this.fr_Payload[4];
+  targetPDU.TimeSynchByte5 = this.fr_Payload[5];
+  targetPDU.TimeSynchByte6 = this.fr_Payload[6];
+  targetPDU.TimeSynchByte7 = this.fr_Payload[7];
+  targetPDU.TimeSynchByte8 = this.fr_Payload[8];
+  targetPDU.TimeSynchByte9 = this.fr_Payload[9];
+  targetPDU.TimeSynchByte10 = this.fr_Payload[10];
+  targetPDU.TimeSynchByte11 = this.fr_Payload[11];
+  targetPDU.TimeSynchByte12 = this.fr_Payload[12];
+  targetPDU.TimeSynchByte13 = this.fr_Payload[13];
+  targetPDU.TimeSynchByte14 = this.fr_Payload[14];  
+  targetPDU.TimeSynchByte15 = this.fr_Payload[15];
+  
+  if (this.fr_Payload[0] == 0x20)
+  {
+    // Calculate new CRC due to a bug in ASDM SW during fleet test
+    
+    remainder = CRC8_H2F_START_VALUE;
+    for (i = 2; i < 17; i++)
+    {
+      if (i == 16)
+      {
+        sc = this.fr_Payload[2] & 0xf;
+        //sc = testVector[0] & 0xf;
+        dataValue = dataIDlist[sc];
+      }
+      else
+      {
+        dataValue = this.fr_Payload[i];
+        //dataValue = testVector[i-2];
+      }
+      
+      remainder = remainder ^ dataValue;
+      
+      for (n = 0; n < 8; n++)
+      {
+        if ((remainder & 0x80) == 0x80)
+        {
+          remainder = ((remainder << 1) ^ CRC8_H2F_POLYNOMIAL) & 0xff;
+        }
+        else
+        {
+          remainder = (remainder << 1);
+        }
+      }
+    }
+
+    crc = remainder ^ CRC8_H2F_XOR;
+    targetPDU.TimeSynchByte1 = crc;
+    //write("CRC = %d", crc);
+  }
+    
+  frUpdatePDU(targetPDU, 1, -1);
+}
+
+
+on frPDU SourceNetwork::AsdmPrototypeMid2FlxSignalIPDU01
+{
+    frPDU TargetNetwork::AsdmPrototypeMid2FlxSignalIPDU01 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmPrototypeMid2FlxSignalIPDU01 == 0)
+    {
+        receivedAsdmPrototypeMid2FlxSignalIPDU01 = 1;
+    }
+
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForSnsrPosnLat1 = this.isCamSnsrPosCamDynCalPrmForSnsrPosnLat1;
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForSnsrOrntn1 = this.isCamSnsrPosCamDynCalPrmForSnsrOrntn1;
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForSnsrPosnLgt1 = this.isCamSnsrPosCamDynCalPrmForSnsrPosnLgt1;
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForSnsrPosnVert1 = this.isCamSnsrPosCamDynCalPrmForSnsrPosnVert1;
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForVehLen1 = this.isCamSnsrPosCamDynCalPrmForVehLen1;
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForVehWhlBas1 = this.isCamSnsrPosCamDynCalPrmForVehWhlBas1;
+    // Removed in SPA2910 targetPDU.isCamSnsrPosCamDynCalPrmForVehWidth1 = this.isCamSnsrPosCamDynCalPrmForVehWidth1;
+    targetPDU.isPitchAgNomSafeGroupPitchAgNomCntr = this.isPitchAgNomSafeGroupPitchAgNomCntr;
+    targetPDU.isPitchAgNomSafeGroupPitchAgNomQf = this.isPitchAgNomSafeGroupPitchAgNomQf;
+    targetPDU.isPitchAgNomSafeGroupPitchAgNomChks = this.isPitchAgNomSafeGroupPitchAgNomChks;
+    targetPDU.isPitchAgNomSafeGroupPitchAgNomVal = this.isPitchAgNomSafeGroupPitchAgNomVal;
+
+    // Set update bits
+    targetPDU.igPitchAgNomSafeGroup_UB = this.igPitchAgNomSafeGroup_UB;
+
+    
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+
+//on frFrame is used for add a comment  
+on frFrame TargetNetwork::AsdmMid2FlxFr01
+{
+    if (receivedAsdmMid2FlxSignalIPDU01 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr01: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU01 = 2;
+    }
+}
+
+on frFrame TargetNetwork::AsdmMid2FlxFr02
+{
+    if (receivedAsdmMid2FlxSignalIPDU02 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr02 : %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU02 = 2;
+    }
+}
+
+on frFrame TargetNetwork::AsdmMid2FlxFr04
+{
+    if (receivedAsdmMid2FlxSignalIPDU04 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr04: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU04 = 2;
+    }
+}
+
+on frFrame TargetNetwork::AsdmMid2FlxFr05
+{
+    if (receivedAsdmMid2FlxSignalIPDU05 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr05: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU05 = 2;
+    }
+}
+
+on frFrame TargetNetwork::AsdmMid2FlxFr06
+{
+    if (receivedAsdmMid2FlxSignalIPDU06 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr06: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU06 = 2;
+    }
+}
+
+on frPDU TargetNetwork::AsdmMid2FlxNmPdu1
+{
+    if (receivedAsdmMid2FlxNmPdu1 == 1)
+    {
+        writeToLog("AsdmMid2FlxNmPdu1: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxNmPdu1 = 2;
+    }
+}
+
+on frFrame TargetNetwork::AsdmMid2FlxTimeSynchFr
+{
+    if (receivedTimeSynchPduMid2Flx0 == 1)
+    {
+        writeToLog("AsdmMid2FlxTimeSynchFr: %I64d\n", this.Time_ns);
+        receivedTimeSynchPduMid2Flx0 = 2;
+    }    
+}
+
+on frFrame TargetNetwork::AsdmPrototypeMid2FlxFr01
+{
+    if (receivedAsdmPrototypeMid2FlxSignalIPDU01 == 1)
+    {
+        writeToLog("AsdmPrototypeMid2FlxFr01: %I64d\n", this.Time_ns);
+        receivedAsdmPrototypeMid2FlxSignalIPDU01 = 2;
+    }
+
+}
+

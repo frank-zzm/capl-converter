@@ -1,0 +1,140 @@
+/*@!Encoding:1252*/
+variables
+{
+  enum e_GwInternalVariables
+  {
+    eLongitudinalAcceleration,
+    eLongitudinalAccelerationQual,
+    eLongitudinalSpeed,
+    eLongitudinalSpeedQual,
+    eDrivingDirection,
+    eAcceleratorPedal,
+    eLateralAcceleration,
+    eVertAcceleration,
+    eYawRate,
+    eYawRateQual,
+    eAmbientTemperature,
+    eWiperStatus,
+    eFrontWheelAngle,
+    eFrontWheelAngleQual,
+    eWheelSpeedFR,
+    eWheelSpeedFL,
+    eWheelSpeedRL,
+    eWheelSpeedRR,
+    eWheelSpeedQual,
+    eTurnIndicator,
+    eBrakeTorque
+  };
+  
+  float longitudinalAcceleration = 0.0;
+  byte longitudinalAccelerationQual = 0;
+  float longitudinalSpeed = 0.0;
+  byte longitudinalSpeedQual = 0;
+  byte drivingDirection = 0;
+  float acceleratorPedal = 0.0;
+  float lateralAcceleration = 0.0;
+  float vertAcceleration = 0.0;
+  float yawRate = 0.0;
+  byte yawRateQual = 0;
+  float ambientTemperature = 0.0;
+  byte wiperStatus = 0;
+  float frontWheelAngle = 0.0;
+  byte frontWheelAngleQual = 0;
+
+  float wheelSpeedFR = 0.0;
+  float wheelSpeedFL = 0.0;
+  float wheelSpeedRR = 0.0;
+  float wheelSpeedRL = 0.0;
+  byte wheelSpeedQual = 0;
+  byte turnIndicator = 0;
+  word brakeTorque = 0;
+}  
+
+  
+void UpdateInternalGwState(enum e_GwInternalVariables updatedSignal, float value)
+{
+  switch (updatedSignal)
+  {
+    case eLongitudinalAcceleration:
+      longitudinalAcceleration = value;
+    break;
+    
+    case eLongitudinalSpeed:
+      longitudinalSpeed = value;
+    break;
+
+    case eLongitudinalSpeedQual:
+      if ((value >= 0.0) && (value < 256.0))
+      {
+        longitudinalSpeedQual = value;
+      }
+      else
+      {
+        longitudinalSpeedQual = 0; // Will be interpreted as unknown
+      }
+    break;
+    
+    case eDrivingDirection:
+      if ((value >= 0.0) && (value < 256.0))
+      {
+        drivingDirection = value;
+      }
+      else
+      {
+        drivingDirection = 0; // Will be interpreted as unknown
+      }
+    break;
+
+    case eAcceleratorPedal:
+      acceleratorPedal = value;
+    break;
+
+    case eLateralAcceleration:
+      lateralAcceleration = value;
+    break;
+
+    case eVertAcceleration:
+      vertAcceleration = value;
+    break;
+
+    case eYawRate:
+      yawRate = value;
+    break;
+
+    case eYawRateQual:
+      if ((value >= 0.0) && (value < 256.0))
+      {
+        yawRateQual = value;
+      }
+      else
+      {
+        yawRateQual = 0; // Will be interpreted as unknown
+      }
+    break;
+
+    case eAmbientTemperature:
+      ambientTemperature = value;
+    break;
+
+    case eWiperStatus:
+      if ((value >= 0.0) && (value < 256.0))
+      {
+        wiperStatus = value;
+      }
+    break;
+
+    case eFrontWheelAngle:
+        frontWheelAngle = value;
+    break;
+    
+    default:
+   //   writeToLog("ERROR: Unknown internal GW signal! Number = %d\n", updatedSignal);
+      return;
+  }
+  
+  UpdateOEMoutput(updatedSignal);
+}
+    
+    
+                              
+

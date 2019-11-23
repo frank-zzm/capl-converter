@@ -1,0 +1,7 @@
+/*@!Encoding:1252*/
+variables
+{
+  char fileToConvert[500] = "C:\\749ManualRteConnection\\TEMP_FOLDER\\G2SVS4_Stereo_PIAE1025_20190408_151134_FlexRay2.asc";
+  char loggingFile[500] = "C:\\749ManualRteConnection\\TEMP_FOLDER\\_tmpConv_G2SVS4_Stereo_PIAE1025_20190408_151134_FlexRay2.asc";
+}
+

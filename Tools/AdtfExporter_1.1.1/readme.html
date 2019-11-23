@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Readme for ADTF Exporter</title>
+  <style>
+
+      body {
+        max-width: 800px;
+      }
+
+      .opt-table {
+        border-spacing: 1px;
+      }
+
+      .opt-table tr th {
+        text-align: left;
+      }
+
+      .opt-table tr td,th {
+        vertical-align: top;
+        border-style: solid;
+        border-color: lightgray;
+        border-width: 1px;
+        border-collapse: collapse;
+        padding: 4px;
+      }
+
+      .opt-table tr td:first-child {
+        width: 200px;
+      }
+
+  </style>
+</head>
+
+<body>
+  <h2>
+    Readme for ADTF Exporter
+  </h2>
+
+
+  <h3>Introduction</h3>
+
+  <p>
+    ADTF Exporter is a .NET command line application for exporting CAN, FlexRay and Automotive
+    Ethernet data from ADTF files. CAN data is exported to CSV or ASC format (default CSV).
+    FlexRay data is exported to ASC format. Automotive Ethernet data is exported to PCAP or ASC
+    format (default PCAP).
+  </p>
+
+  <h3>Requirements</h3>
+
+  <p>
+    The application requires that .NET 4.0 or higher is installed.
+  </p>
+
+
+  <h3>Usage</h3>
+
+  <p>Normal usage is:</p>
+
+  <pre>
+    AdtfExporter [options] input_file1.dat input_file2.dat ...
+  </pre>
+
+  <p>
+    This will export all CAN* ADTF streams in the files as CSV or ASC text files:
+  </p>
+
+  <pre>
+    input_file1_CAN1.csv or input_file1_CAN1.asc
+    input_file1_CAN2.csv or input_file1_CAN2.asc
+    input_file1_CAN3.csv or input_file1_CAN3.asc
+    input_file1_CAN4.csv or input_file1_CAN4.asc
+    input_file2_CAN1.csv or input_file2_CAN1.asc
+    input_file2_CAN2.csv or input_file2_CAN2.asc
+    input_file2_CAN3.csv or input_file2_CAN3.asc
+    input_file2_CAN4.csv or input_file2_CAN4.asc
+    ...
+  </pre>
+
+  <p>Allowed options:</p>
+
+  <table class="opt-table">
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td>
+        <code>--merge-can</code>
+      </td>
+      <td>Merges CAN channels into one output file instead of outputting them into separate files.</td>
+    </tr>
+    <tr>
+      <td>
+        <code>--output-asc</code>
+      </td>
+      <td>
+        Outputs CAN data in ASC file format. The default is to generate in CSV format.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>--emulate-adtf</code>
+      </td>
+      <td>
+        Emulates the behaviour of the ADTF runtime by adding 1 to the channel number in the ASC output.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>--auto-eth-asc</code>
+      </td>
+      <td>
+        Outputs Automotive Ethernet messages in ASC format. The default is PCAP.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>--output-path</code>
+      </td>
+      <td>
+        Sets the path where the output will be saved.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>--log-path</code>
+      </td>
+      <td>
+        Sets the path where the batch result log will be saved.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>--asc-timestamp-offset</code>
+      </td>
+      <td>
+        For outputs in ASC format, the timestamps are adjusted with an offset to have a different
+        origin of time. The offset is in seconds. The default is 0.0, i.e. no modification.<br>
+        <b>Use case example:</b><br>
+        There is an issue in Vector CANoe that it takes long time to open ASC files containing
+        large timestamps, like epoch timestamps. To reduce this time, the timestamps can be
+        modified to have a different origin of time by subtracting an offset. The result is
+        smaller timestamps. As an example, the offset can be retrieved from Iris by opening the
+        oldest clip in the recording sequence (files inputted to AdtfExporter), read the oldest
+        timestamp and replacing part of it with zeros. E.g. 1508123456 -> offset 1508000000 with
+        resulting timestamp 123456.
+      </td>
+    </tr>
+  </table>
+
+
+  <h3>CAN Output File Format</h3>
+
+  <p>CSV output column order:</p>
+
+  <ol>
+    <li>Timestamp in microseconds(from BoB)</li>
+    <li>CAN channel</li>
+    <li>CAN message ID</li>
+    <li>Length of CAN data</li>
+    <li>CAN data</li>
+  </ol>
+
+  <p>ASC output columnorder:</p>
+
+  <ol>
+    <li>Timestamp in seconds(from BoB)</li>
+    <li>CAN channel (plus one if --emulate-adtf is used)</li>
+    <li>CAN message ID</li>
+    <li>Rx marker</li>
+    <li>ADTF internal marker</li>
+    <li>Length of CAN data</li>
+    <li>CAN data</li>
+  </ol>
+
+  <h3>Automotive Ethernet Output File Format</h3>
+
+  <p>ASC output columnorder:</p>
+
+  <ol>
+    <li>Timestamp in seconds(from BoB)</li>
+    <li>ETH marker</li>
+    <li>Channel (1)</li>
+    <li>Rx marker</li>
+    <li>Length of Ethernet data:Ethernet data</li>
+  </ol>
+
+</body>
+</html>

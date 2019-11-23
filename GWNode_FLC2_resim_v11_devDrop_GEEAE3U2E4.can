@@ -1,0 +1,959 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+ // #include "test\fileToConvert.cin"
+  #include "fileToConvert.cin" // Defines variable "fileToConvert"
+  // add E2E.can
+}
+
+variables
+{
+  const dword cFrNullFlag = 0x400; // only for VN
+  
+  msTimer replayCheck;
+  char fileName[500], filePath[1000], relFilePath[500];
+  dword fileHandler;
+  byte loggerStarted = 0;
+  int64 lastTimeStamp = 0;
+  int64 firstTimeStamp = -1;
+  int has_logged_timesyn=0;
+  
+  byte synchInfoReceived = 0;
+  byte synchLog = 0;
+  int temp_PosnFromSatltCntr=-1;
+  
+ // frFrame TargetNetwork::ASDMFlcFlexTimeSynchFr targetTimeSynchFr;
+  
+  byte receivedAsdmFLC_FlexraySignalIPdu00 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu01 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu02 = 0;
+  byte receivedAsdmFLC_FlexraySignalIPdu03 = 0;
+
+  byte receivedAsdmFlcFRNmPdu1 = 0;
+  byte receivedASDMFlcFlexTimeSynchPdu = 0;
+  byte receivedAsdmPrototypeMid2FlxSignalIPDU01 = 0;
+  
+  
+  byte hardcodedParameters = 0;
+  
+  int64  temp_isAgDataRawSafeYawRate;
+  int  temp_isAgDataRawSafeRollRateQf ;
+  int  temp_isAgDataRawSafeYawRateQf;
+  int  temp_isAgDataRawSafeChks ;
+  int temp_isAgDataRawSafeCntr ;
+  int64  temp_isAgDataRawSafeRollRate;
+  int temp_igAgDataRawSafe_UB;
+  
+  int  temp_isADataRawSafeAVertQf;
+  int64  temp_isADataRawSafeALgt;
+  int  temp_isADataRawSafeALat;
+  int  temp_isADataRawSafeChks;
+  int  temp_isADataRawSafeALat1Qf;
+  int  temp_isADataRawSafeCntr;
+  int  temp_isADataRawSafeALgt1Qf;
+  int64  temp_isADataRawSafeAVert;
+  int temp_igADataRawSafe_UB;
+  
+  int temp_isWhlSpdCircumlFrntLeQf;
+  int64 temp_isWhlSpdCircumlFrntLe;
+  int temp_isWhlSpdCircumlFrntRiQf;
+  int temp_isWhlSpdCircumlFrntChks;
+  int temp_isWhlSpdCircumlFrntRi;
+  int temp_isWhlSpdCircumlFrntCntr;
+  int temp_igWhlSpdCircumlFrnt_UB;
+  
+  int temp_isAmbTRawQly;
+  int64 temp_isAmbTRawAmbTVal;
+  int temp_igAmbTRaw_UB;
+  
+  int64 temp_isBkpOfDstTrvld;
+  int64 temp_isCarTiGlb;
+  int   temp_isBkpOfDstTrvld_UB;
+  int  temp_isCarTiGlb_UB;
+  
+  byte temp_isVehModMngtGlbSafe1Chks;
+  byte temp_isVehModMngtGlbSafe1CarModSts1;
+  int temp_isVehModMngtGlbSafe1Cntr=-1;
+  byte temp_isVehModMngtGlbSafe1EgyLvlElecSubtyp;
+  byte temp_isVehModMngtGlbSafe1PwrLvlElecSubtyp;
+  byte temp_isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp;
+  byte temp_isVehModMngtGlbSafe1UsgModSts;
+  byte temp_isVehModMngtGlbSafe1PwrLvlElecMai;
+  byte temp_isVehModMngtGlbSafe1EgyLvlElecMai;
+  byte temp_isVehModMngtGlbSafe1FltEgyCnsWdSts;
+  byte temp_igVehModMngtGlbSafe1_UB;
+  
+  int temp_isTrsmActrPosnSafeTrsmActrPosnCntr=-1;
+  byte temp_isTrsmActrPosnSafeTrsmActrPosnChks;
+ 
+ 
+  
+  byte  temp_isVehBattUSysU;
+  byte  temp_isVehBattUSysUQf;
+  byte  temp_igVehBattU_UB;
+
+  byte temp_isCamSnsrPoseCntr;
+  byte temp_isCamSnsrPoseChks;
+  int temp_isCamSnsrPosePitchAg;
+  int temp_isCamSnsrPosePosnLat;
+  int temp_isCamSnsrPoseYawAg;
+  int temp_isCamSnsrPosePosnVert;
+  int temp_isCamSnsrPoseRollAg;
+  int temp_isCamSnsrPosePosnLgt;
+  byte temp_igCamSnsrPose_UB;
+  
+  byte temp_isRlyPwrDistbnCmd1WdIgnRlyCmd;
+  byte temp_isRlyPwrDistbnCmd1WdIgnRlyCmd_UB;
+
+  int temp_isVehSpdIndcdVehSpdIndcd;
+  byte temp_isVehSpdIndcdVeSpdIndcdUnit;
+  byte temp_igVehSpdIndcd_UB;
+
+
+  }
+
+
+byte GEEA_E2E_Compute(byte data_bytes[],byte data_lenth,byte crc_init_value)
+{
+  char tempText[1024];
+  int i,j;
+  byte u8_crc8;
+  byte u8_poly;
+  
+  u8_crc8 = crc_init_value;
+  u8_poly =0x1D;
+  for(i=0;i< data_lenth ;i++)
+  {
+    u8_crc8 =data_bytes[i];
+    for(j=0;j<8;j++)
+    {
+      if(u8_crc8 &0x80)
+      {
+        u8_crc8 =(u8_crc8<<1)^u8_poly;
+      }
+      else{
+        u8_crc8<<=1;
+      }
+    }
+  }
+  u8_crc8 ^= 0x00;
+  return u8_crc8;
+}
+
+
+
+on start
+{
+ 
+  setReplayFileName("ReplayBlock 1",fileToConvert,"asc");
+  //setReplayFilename ("ReplayBlock 2",fileCAN,"asc");
+
+  //snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+  write("file path log: %s", loggingFile);      
+  setLogFileName("Logging", loggingFile);
+
+  lastTimeStamp = 0;
+  replayStart("ReplayBlock 1");
+ // replayStart ("ReplayBlock 2");
+
+  setTimer(replayCheck, 2000);
+  write("start time is %f",timeNow()/100000.0);
+ // startLogging("logging");
+  
+  
+}
+
+on preStop
+{
+  writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+  
+  StopLogging ("Logging");
+  loggerStarted = 0;
+  write("end time is %f",timeNow()/100000.0 );
+}
+
+on timer replayCheck
+{
+  if(ReplayState("ReplayBlock 1")!=1)
+  {
+    writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+
+    StopLogging ("Logging");
+    loggerStarted = 0;
+    stop();
+
+//    receivedAsdmFLC_FlexraySignalIPdu00 = 0;
+//    receivedAsdmFLC_FlexraySignalIPdu01 = 0;
+//    receivedAsdmFLC_FlexraySignalIPdu02 = 0;
+//    receivedAsdmFLC_FlexraySignalIPdu03 = 0;
+//    receivedAsdmMid2FlxSignalIPDU06 = 0;
+//    receivedAsdmFlcFRNmPdu1 = 0;
+//    receivedASDMFlcFlexTimeSynchPdu = 0;
+//    receivedAsdmPrototypeMid2FlxSignalIPDU01 = 0;
+//
+//    if(fileGetString (fileName, elcount(fileName), fileHandler)!= 0)
+//    {
+//      fileName[strlen(fileName)-1]=0;
+//      write("File read: %s",fileName);
+//      
+//      snprintf(relFilePath,elcount(relFilePath),"\\conversionFolder\\%s",fileName);
+//      getAbsFilePath(relFilePath, filePath, elcount(filePath));
+//      write("file path reply: %s",filePath);
+//      setReplayFileName("ReplayBlock 1",filePath,"asc");
+//      
+//      lastTimeStamp = 0;
+//      replayStart("ReplayBlock 1");
+//      
+//      snprintf(filePath,elcount(filePath),"\\conversionFolder\\_tmpConv_%s",fileName);
+//      write("file path log: %s",filePath);      
+//      setLogFileName("Logging",filePath);
+//    }
+//    else{
+//      writeToLog("Last time stamp: %I64d\n", lastTimeStamp);
+//
+//      StopLogging ("Logging");
+//      loggerStarted = 0;
+//      stop();
+//    }
+  }
+  else{
+   // write("replay Ongoing");
+  }
+
+  settimer(replayCheck,200);
+
+}
+
+void checkLogger(int64 currentTimeStamp)
+{
+    if (firstTimeStamp < 0)
+    {
+        firstTimeStamp = currentTimeStamp;
+    }
+
+    
+    if (loggerStarted != 1)
+    {
+        startLogging("Logging");
+        
+        //writeToLog("First time stamp: %I64d\n", firstTimeStamp);
+
+        loggerStarted = 1;
+    }
+    
+    if (lastTimeStamp < currentTimeStamp)
+    {
+        lastTimeStamp = currentTimeStamp;
+    }
+    
+}
+
+//CAN data conversion
+//on PDU sourceCAN::BbmAdRedundancySignalIPdu10
+//{
+//  frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu00 targetPDU;  
+// // targetPDU .isADataRawSafeChks = this.isADataRawSafeChks;
+//  write("we can get can data");
+//}
+
+
+  //sourceNetwork::AsdmFLC_FlexraySignalIPdu00 has been done
+on frPDU SourceNetwork::AsdmFLC_FlexraySignalIPdu00
+{
+    frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu00 targetPDU;
+
+    checkLogger(this.Time_ns);
+  startLogging("logging");
+    if (receivedAsdmFLC_FlexraySignalIPdu00 == 0)
+    {
+        receivedAsdmFLC_FlexraySignalIPdu00 = 1;
+      write("it is send out by pdu00");
+    }
+  
+    //targetPDU.isFRNetworkStatusMid2 = this.isFRNetworkStatusMid2;
+    targetPDU.isFRNetworkStatusASDM2FLC = this.isFRNetworkStatusASDM2FLC;
+    targetPDU.isAebObjectVisionID = this.isAebObjectVisionID;
+    //need to add
+   targetPDU.isPosnFromSatltPosnVHozl=0;
+   targetPDU.isPosnFromSatltPosnVVert=0;
+   targetPDU.isPosnFromSatltTiForMins=0;
+   targetPDU.isPosnFromSatltPosnLgt=0;
+   targetPDU.isPosnFromSatltPosnLat=0;
+   targetPDU.isPosnFromSatltPosnDir=0;
+   targetPDU.isPosnFromSatltPosnAlti=0;
+   targetPDU.isPosnFromSatltTiForSec=0;
+   targetPDU.isPosnFromSatltPosnSpd=0;
+   targetPDU.isPosnFromSatltUTCForMth=0;
+   targetPDU.isPosnFromSatltUTCForSec=0;
+   targetPDU.isPosnFromSatltUTCForMins=0;
+   targetPDU.isPosnFromSatltUTCForHr=0;
+   targetPDU.isPosnFromSatltUTCForDay=0;
+   targetPDU.isPosnFromSatltUTCForYr=0;
+   targetPDU.isPosnFromSatltTiForMsec=0;
+    if (temp_PosnFromSatltCntr==14)
+    {
+      temp_PosnFromSatltCntr++;
+      targetPDU.isPosnFromSatltCntr=temp_PosnFromSatltCntr;
+      temp_PosnFromSatltCntr=-1;
+    }
+    else
+    {
+      temp_PosnFromSatltCntr++;
+      targetPDU.isPosnFromSatltCntr=temp_PosnFromSatltCntr;
+    }
+  //signal group: igCamSnsrPose for Fr03
+  temp_isCamSnsrPoseCntr=this.isCamSnsrPoseCntr;
+  temp_isCamSnsrPoseChks=this.isCamSnsrPoseChks;
+  temp_isCamSnsrPosePitchAg=this.isCamSnsrPosePitchAg;
+  temp_isCamSnsrPosePosnLat=this.isCamSnsrPosePosnLat;
+  temp_isCamSnsrPoseYawAg=this.isCamSnsrPoseYawAg;
+  temp_isCamSnsrPosePosnVert=this.isCamSnsrPosePosnVert;
+  temp_isCamSnsrPoseRollAg=this.isCamSnsrPoseRollAg;
+  temp_isCamSnsrPosePosnLgt=this.isCamSnsrPosePosnLgt;
+  temp_igCamSnsrPose_UB=this.igCamSnsrPose_UB;
+    
+  //signal :isRlyPwrDistbnCmd1WdIgnRlyCmd for FR03
+  temp_isRlyPwrDistbnCmd1WdIgnRlyCmd=this.isRlyPwrDistbnCmd1WdIgnRlyCmd;
+  temp_isRlyPwrDistbnCmd1WdIgnRlyCmd_UB=this.isRlyPwrDistbnCmd1WdIgnRlyCmd_UB;
+  //signal group: igVehSpdIndcd for Fr03
+  temp_isVehSpdIndcdVehSpdIndcd=this.isVehSpdIndcdVehSpdIndcd;
+  temp_isVehSpdIndcdVeSpdIndcdUnit=this.isVehSpdIndcdVeSpdIndcdUnit;
+  temp_igVehSpdIndcd_UB=this.igVehSpdIndcd_UB;
+  
+    // Set update bits
+    //targetPDU.igAmbTRaw_UB = this.igAmbTRaw_UB;
+
+    targetPDU.isAebObjectVisionID_UB = this.isAebObjectVisionID_UB;
+    targetPDU.igPosnFromSatlt_UB=1;
+
+
+
+    //20190721,????,???FLC2??
+	//targetPDU.isFRNetworkStatusASDM2FLC_UB = this.isFRNetworkStatusASDM2FLC_UB;    
+	
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+//sourceNetwork::AsdmFLC_FlexraySignalIPdu01 has been done
+
+
+on frPDU SourceNetwork::AsdmFLC_FlexraySignalIPdu01
+{
+    frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu01 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if(receivedAsdmFLC_FlexraySignalIPdu01 == 0)
+    {
+        receivedAsdmFLC_FlexraySignalIPdu01 = 1;
+    }
+
+	//targetPDU.isVehMtnStVehMtnSt = this.isVehMtnStVehMtnSt;
+    
+   //signal group:igVehMtnSt 
+  targetPDU.isVehMtnStChks = this.isVehMtnStChks;
+  targetPDU.isVehMtnStCntr = this.isVehMtnStCntr;
+  targetPDU.isVehMtnStVehMtnSt = this.isVehMtnStVehMtnSt;
+  //signal group:igAsyDataWithCmpSafe
+  targetPDU.isAsyDataWithCmpSafeChks = this.isAsyDataWithCmpSafeChks;
+  targetPDU.isAsyDataWithCmpSafeALat1Qf = this.isAsyDataWithCmpSafeALat1Qf;
+  targetPDU.isAsyDataWithCmpSafeALatWithCmp = this.isAsyDataWithCmpSafeALatWithCmp;
+  targetPDU.isAsyDataWithCmpSafeYawRateWithCmp = this.isAsyDataWithCmpSafeYawRateWithCmp;
+  targetPDU.isAsyDataWithCmpSafeALgt1Qf = this.isAsyDataWithCmpSafeALgt1Qf;
+  targetPDU.isAsyDataWithCmpSafeCntr = this.isAsyDataWithCmpSafeCntr;
+  targetPDU.isAsyDataWithCmpSafeGrdtOfALgt = this.isAsyDataWithCmpSafeGrdtOfALgt;
+  targetPDU.isAsyDataWithCmpSafeYawRateQf = this.isAsyDataWithCmpSafeYawRateQf;
+  //signal group:igVehSpdLgt  
+  targetPDU.isVehSpdLgtQf = this.isVehSpdLgtQf;
+  targetPDU.isVehSpdLgtCntr = this.isVehSpdLgtCntr;
+  targetPDU.isVehSpdLgtChks = this.isVehSpdLgtChks;
+  targetPDU.isVehSpdLgtVehSpdLgt = this.isVehSpdLgtVehSpdLgt;
+  //signal group:igSteerWhlSnsr  
+  targetPDU.isSteerWhlSnsrQf = this.isSteerWhlSnsrQf;
+  targetPDU.isSteerWhlSnsrChks = this.isSteerWhlSnsrChks;
+  targetPDU.isSteerWhlSnsrSteerWhlAgSpd = this.isSteerWhlSnsrSteerWhlAgSpd;
+  targetPDU.isSteerWhlSnsrCntr = this.isSteerWhlSnsrCntr;
+  targetPDU.isSteerWhlSnsrSteerWhlAg = this.isSteerWhlSnsrSteerWhlAg;
+  //signal group:  igWhlSpdCircumlRe
+  targetPDU.isWhlSpdCircumlReLeQf = this.isWhlSpdCircumlReLeQf;
+  targetPDU.isWhlSpdCircumlReLe = this.isWhlSpdCircumlReLe;
+  targetPDU.isWhlSpdCircumlReRiQf = this.isWhlSpdCircumlReRiQf;
+  targetPDU.isWhlSpdCircumlReRi = this.isWhlSpdCircumlReRi;
+  targetPDU.isWhlSpdCircumlReChks = this.isWhlSpdCircumlReChks;
+  targetPDU.isWhlSpdCircumlReCntr = this.isWhlSpdCircumlReCntr;
+  //signal group: igWhlDirRotlRe
+  targetPDU.isWhlDirRotlReRi = this.isWhlDirRotlReRi;
+  targetPDU.isWhlDirRotlReLe = this.isWhlDirRotlReLe;
+  targetPDU.isWhlDirRotlReCntr = this.isWhlDirRotlReCntr;
+  targetPDU.isWhlDirRotlReChks = this.isWhlDirRotlReChks;
+  //signal group: come from FR03
+  targetPDU.isADataRawSafeALat=temp_isADataRawSafeALat;
+  targetPDU.isADataRawSafeALat1Qf=temp_isADataRawSafeALat1Qf ;
+  targetPDU.isADataRawSafeALgt=temp_isADataRawSafeALgt;
+  targetPDU.igADataRawSafe_UB=temp_igADataRawSafe_UB;
+  
+  targetPDU.isADataRawSafeALgt1Qf=temp_isADataRawSafeALgt1Qf;
+  targetPDU.isADataRawSafeAVert=temp_isADataRawSafeAVert ;
+  targetPDU.isADataRawSafeAVertQf=temp_isADataRawSafeAVertQf;
+  targetPDU.isADataRawSafeChks=temp_isADataRawSafeChks;
+  targetPDU.isADataRawSafeCntr=temp_isADataRawSafeCntr;
+  targetPDU.isAgDataRawSafeChks=temp_isAgDataRawSafeChks;
+  targetPDU.isAgDataRawSafeCntr=temp_isAgDataRawSafeCntr ;
+  targetPDU.isAgDataRawSafeRollRate=temp_isAgDataRawSafeRollRate;
+  targetPDU.isAgDataRawSafeRollRateQf=temp_isAgDataRawSafeRollRateQf;
+  targetPDU.isAgDataRawSafeYawRate=temp_isAgDataRawSafeYawRate;
+  targetPDU.isAgDataRawSafeYawRateQf=temp_isAgDataRawSafeYawRateQf;
+  targetPDU.igAgDataRawSafe_UB=temp_igAgDataRawSafe_UB;
+   
+    //signal group: igWhlSpdCircumlFrnt from Fr03
+  targetPDU.isWhlSpdCircumlFrntChks=temp_isWhlSpdCircumlFrntChks;
+  targetPDU.isWhlSpdCircumlFrntCntr=temp_isWhlSpdCircumlFrntCntr;
+  targetPDU.isWhlSpdCircumlFrntLe=temp_isWhlSpdCircumlFrntLe;
+  targetPDU.isWhlSpdCircumlFrntLeQf=temp_isWhlSpdCircumlFrntLeQf;
+  targetPDU.isWhlSpdCircumlFrntRi=temp_isWhlSpdCircumlFrntRi;
+  targetPDU.isWhlSpdCircumlFrntRiQf=temp_isWhlSpdCircumlFrntRiQf;
+   targetPDU.igWhlSpdCircumlFrnt_UB=temp_igWhlSpdCircumlFrnt_UB;
+
+  //signal group:igAmbTRaw For fr03;
+  temp_isAmbTRawQly = this.isAmbTRawQly;
+  temp_isAmbTRawAmbTVal=this.isAmbTRawAmbTVal;
+    temp_igAmbTRaw_UB=this.igAmbTRaw_UB;
+    
+   //signals for fr03 
+  temp_isBkpOfDstTrvld=this.isBkpOfDstTrvld;
+    temp_isBkpOfDstTrvld_UB=this.isBkpOfDstTrvld_UB;
+  temp_isCarTiGlb=this.isCarTiGlb;
+    temp_isCarTiGlb_UB=this.isCarTiGlb_UB;
+    //signal group
+  temp_isVehModMngtGlbSafe1Chks=this.isVehModMngtGlbSafe1Chks;
+  temp_isVehModMngtGlbSafe1CarModSts1=this.isVehModMngtGlbSafe1CarModSts1;
+  temp_isVehModMngtGlbSafe1Cntr=this.isVehModMngtGlbSafe1Cntr;
+  temp_isVehModMngtGlbSafe1EgyLvlElecSubtyp=this.isVehModMngtGlbSafe1EgyLvlElecSubtyp;
+  temp_isVehModMngtGlbSafe1PwrLvlElecSubtyp=this.isVehModMngtGlbSafe1PwrLvlElecSubtyp;
+  temp_isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp=this.isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp;
+  temp_isVehModMngtGlbSafe1UsgModSts=this.isVehModMngtGlbSafe1UsgModSts;
+  temp_isVehModMngtGlbSafe1PwrLvlElecMai=this.isVehModMngtGlbSafe1PwrLvlElecMai;
+  temp_isVehModMngtGlbSafe1EgyLvlElecMai=this.isVehModMngtGlbSafe1EgyLvlElecMai;
+  temp_isVehModMngtGlbSafe1FltEgyCnsWdSts=this.isVehModMngtGlbSafe1FltEgyCnsWdSts;
+  temp_igVehModMngtGlbSafe1_UB=this.igVehModMngtGlbSafe1_UB;
+  //signal group: igVehBattU for Fr03
+  temp_isVehBattUSysU=this.isVehBattUSysU;
+  temp_isVehBattUSysUQf=this.isVehBattUSysUQf;
+  temp_igVehBattU_UB=this.igVehBattU_UB;
+ 
+    
+    //SET UPDATE BIT
+    targetPDU.igADataRawSafe_UB=1;
+
+    targetPDU.igSteerWhlSnsr_UB = this.igSteerWhlSnsr_UB;
+    targetPDU.igAsyDataWithCmpSafe_UB = this.igAsyDataWithCmpSafe_UB; 
+    targetPDU.igVehMtnSt_UB = this.igVehMtnSt_UB;
+    targetPDU.igVehSpdLgt_UB = this.igVehSpdLgt_UB;
+    targetPDU.igWhlDirRotlRe_UB=this.igWhlDirRotlRe_UB;
+    targetPDU.igWhlSpdCircumlRe_UB = this.igWhlSpdCircumlRe_UB;  
+    frUpdatePDU(targetPDU, 1, -1);
+}
+ 
+
+//sourceNetwork::AsdmFLC_FlexraySignalIPdu02 has been done
+on frPDU SourceNetwork::AsdmFLC_FlexraySignalIPdu02
+{
+    frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu02 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmFLC_FlexraySignalIPdu02 == 0)
+    {
+        receivedAsdmFLC_FlexraySignalIPdu02 = 1;
+    }
+  targetPDU.isCamSnsrVehPrmVehLvlFrL = this.isCamSnsrVehPrmVehLvlFrL;
+  targetPDU.isCamSnsrVehPrmDstLongToHdLamp = this.isCamSnsrVehPrmDstLongToHdLamp;
+  targetPDU.isCamSnsrVehPrmDrWheel = this.isCamSnsrVehPrmDrWheel;
+  targetPDU.isCamSnsrVehPrmWhlRadius = this.isCamSnsrVehPrmWhlRadius;
+  targetPDU.isCamSnsrVehPrmDstVertToHdLamp = this.isCamSnsrVehPrmDstVertToHdLamp;
+  targetPDU.isCamSnsrVehPrmVehHgt = this.isCamSnsrVehPrmVehHgt;
+  targetPDU.isCamSnsrVehPrmDynWhlRadRe = this.isCamSnsrVehPrmDynWhlRadRe;
+  targetPDU.isCamSnsrVehPrmVehLvlFrR = this.isCamSnsrVehPrmVehLvlFrR;
+  targetPDU.isCamSnsrVehPrmVehWidth = this.isCamSnsrVehPrmVehWidth;
+  targetPDU.isCamSnsrVehPrmSlipAglGrad = this.isCamSnsrVehPrmSlipAglGrad;
+  targetPDU.isCamSnsrVehPrmVehLvlOffset = this.isCamSnsrVehPrmVehLvlOffset;
+  targetPDU.isCamSnsrVehPrmAxlLdDtrb = this.isCamSnsrVehPrmAxlLdDtrb;
+  targetPDU.isCamSnsrVehPrmDstLatToWhlCentr = this.isCamSnsrVehPrmDstLatToWhlCentr;
+  targetPDU.isCamSnsrVehPrmHoodAg = this.isCamSnsrVehPrmHoodAg;
+  targetPDU.isCamSnsrVehPrmVehInert = this.isCamSnsrVehPrmVehInert;
+  targetPDU.isCamSnsrVehPrmVehWhlBas = this.isCamSnsrVehPrmVehWhlBas;
+  targetPDU.isCamSnsrVehPrmCalTgtPosY = this.isCamSnsrVehPrmCalTgtPosY;
+  targetPDU.isCamSnsrVehPrmVehFrTrkWidth = this.isCamSnsrVehPrmVehFrTrkWidth;
+  targetPDU.isCamSnsrVehPrmAxleHeiRe = this.isCamSnsrVehPrmAxleHeiRe;
+  targetPDU.isCamSnsrVehPrmCalTgtPosX = this.isCamSnsrVehPrmCalTgtPosX;
+  targetPDU.isCamSnsrVehPrmFrAxHgt = this.isCamSnsrVehPrmFrAxHgt;
+  targetPDU.isCamSnsrVehPrmCalTgtPosZ = this.isCamSnsrVehPrmCalTgtPosZ;
+  targetPDU.isCamSnsrVehPrmVehReTrkWidth = this.isCamSnsrVehPrmVehReTrkWidth;
+  targetPDU.isCamSnsrVehPrmChks = this.isCamSnsrVehPrmChks;
+  targetPDU.isCamSnsrVehPrmDstLgtToBmpFrnt = this.isCamSnsrVehPrmDstLgtToBmpFrnt;
+  targetPDU.isCamSnsrVehPrmVehLvlReL = this.isCamSnsrVehPrmVehLvlReL;
+  targetPDU.isCamSnsrVehPrmDstLatToHdLamp = this.isCamSnsrVehPrmDstLatToHdLamp;
+  targetPDU.isCamSnsrVehPrmVehLen = this.isCamSnsrVehPrmVehLen;
+  targetPDU.isCamSnsrVehPrmDisFrAxToBump = this.isCamSnsrVehPrmDisFrAxToBump;
+  targetPDU.isCamSnsrVehPrmDynWhlRadFr = this.isCamSnsrVehPrmDynWhlRadFr;
+  targetPDU.isCamSnsrVehPrmVehWeight = this.isCamSnsrVehPrmVehWeight;
+  targetPDU.isCamSnsrVehPrmCntr = this.isCamSnsrVehPrmCntr;
+  targetPDU.isCamSnsrVehPrmSelfStrGrad = this.isCamSnsrVehPrmSelfStrGrad;
+  targetPDU.isCamSnsrVehPrmPinionAgToWhlAgFac = this.isCamSnsrVehPrmPinionAgToWhlAgFac;
+  targetPDU.isCamSnsrVehPrmVehLvlReR = this.isCamSnsrVehPrmVehLvlReR;
+
+
+    //set update bit
+     targetPDU.igCamSnsrVehPrm_UB = this.igCamSnsrVehPrm_UB;
+
+ // targetPDU.isVehModMngtGlbSafe1Chks = this.isVehModMngtGlbSafe1Chks;	
+//????//????,???
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+//sourceNetwork::AsdmFLC_FlexraySignalIPdu04 has been done
+on frPDU SourceNetwork::AsdmFLC_FlexraySignalIPdu03
+{
+    frPDU TargetNetwork::AsdmFLC_FlexraySignalIPdu03 targetPDU;
+  byte Flex_Data[5]={0,0,0,0,0};
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmFLC_FlexraySignalIPdu03 == 0)
+    {
+        receivedAsdmFLC_FlexraySignalIPdu03 = 1;
+       write("it is send out by pdu03");
+    }
+  //signal group: igHznData
+  targetPDU.isHznDataMinorProtocolVersion = this.isHznDataMinorProtocolVersion;
+  targetPDU.isHznDataMajorProtocolVersion = this.isHznDataMajorProtocolVersion;
+  targetPDU.isHznDataMapVersionYear = this.isHznDataMapVersionYear;
+  targetPDU.isHznDataCountryCode = this.isHznDataCountryCode;
+  targetPDU.isHznDataMinorProtocolSubVersion = this.isHznDataMinorProtocolSubVersion;
+  targetPDU.isHznDataMapVersionYearQuarter = this.isHznDataMapVersionYearQuarter;
+  targetPDU.isHznDataRegionCode = this.isHznDataRegionCode;
+  targetPDU.isHznDataDrivingSide = this.isHznDataDrivingSide;
+  targetPDU.isHznDataMapProvider = this.isHznDataMapProvider;
+  targetPDU.isHznDataSpeedUnits = this.isHznDataSpeedUnits;
+  targetPDU.isHznDataMessageType = this.isHznDataMessageType;
+  targetPDU.isHznDataCyclicCounter = this.isHznDataCyclicCounter;
+  targetPDU.isHznDataHardwareVersion = this.isHznDataHardwareVersion;
+  //signal group: igVin  
+  targetPDU.isVinVINSignalPos1 = this.isVinVINSignalPos1;
+  targetPDU.isVinVINSignalPos2 = this.isVinVINSignalPos2;
+  targetPDU.isVinVINSignalPos5 = this.isVinVINSignalPos5;
+  targetPDU.isVinBlockNr = this.isVinBlockNr;
+  targetPDU.isVinVINSignalPos3 = this.isVinVINSignalPos3;
+  targetPDU.isVinVINSignalPos4 = this.isVinVINSignalPos4;
+  targetPDU.isVinVINSignalPos7 = this.isVinVINSignalPos7;
+  targetPDU.isVinVINSignalPos6 = this.isVinVINSignalPos6;
+  //signals 
+
+
+  //come from FR01:
+  //signal group: igAmbTRaw
+  targetPDU.isAmbTRawQly  = temp_isAmbTRawQly;
+  targetPDU.isAmbTRawAmbTVal=temp_isAmbTRawAmbTVal;
+  targetPDU .isCarTiGlb=temp_isCarTiGlb;
+  targetPDU.isBkpOfDstTrvld=temp_isBkpOfDstTrvld;
+  targetPDU.isBkpOfDstTrvld_UB=temp_isBkpOfDstTrvld_UB;
+  targetPDU.isCarTiGlb_UB=temp_isCarTiGlb_UB;
+  //come from FR01
+   //signal group:igVehModMngtGlbSafe1
+  targetPDU.isVehModMngtGlbSafe1Chks= temp_isVehModMngtGlbSafe1Chks;
+  targetPDU.isVehModMngtGlbSafe1CarModSts1= temp_isVehModMngtGlbSafe1CarModSts1;
+  targetPDU.isVehModMngtGlbSafe1Cntr= temp_isVehModMngtGlbSafe1Cntr;
+  targetPDU.isVehModMngtGlbSafe1EgyLvlElecSubtyp= temp_isVehModMngtGlbSafe1EgyLvlElecSubtyp;
+  targetPDU.isVehModMngtGlbSafe1PwrLvlElecSubtyp= temp_isVehModMngtGlbSafe1PwrLvlElecSubtyp;
+  targetPDU.isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp= temp_isVehModMngtGlbSafe1CarModSubtypWdCarModSubtyp;
+  targetPDU.isVehModMngtGlbSafe1UsgModSts= temp_isVehModMngtGlbSafe1UsgModSts;
+  targetPDU.isVehModMngtGlbSafe1PwrLvlElecMai= temp_isVehModMngtGlbSafe1PwrLvlElecMai;
+  targetPDU.isVehModMngtGlbSafe1EgyLvlElecMai= temp_isVehModMngtGlbSafe1EgyLvlElecMai;
+  targetPDU.isVehModMngtGlbSafe1FltEgyCnsWdSts= temp_isVehModMngtGlbSafe1FltEgyCnsWdSts;
+  targetPDU.igVehModMngtGlbSafe1_UB= temp_igVehModMngtGlbSafe1_UB;
+  
+  //signal group:igTrsmActrPosnSafe 
+  //need to redefine
+  targetPDU.isTrsmActrPosnSafeTrsmActrPosn= 0;
+       if (temp_PosnFromSatltCntr==14)
+    {
+      temp_isTrsmActrPosnSafeTrsmActrPosnCntr++;
+      targetPDU.isTrsmActrPosnSafeTrsmActrPosnCntr=temp_isTrsmActrPosnSafeTrsmActrPosnCntr;
+      temp_isTrsmActrPosnSafeTrsmActrPosnCntr=-1;
+    }
+    else
+    {
+      temp_isTrsmActrPosnSafeTrsmActrPosnCntr++;
+      targetPDU.isTrsmActrPosnSafeTrsmActrPosnCntr=temp_isTrsmActrPosnSafeTrsmActrPosnCntr;
+    } 
+    
+  //compute byte data for crc
+  //CRC need more time to rebuild
+  Flex_Data[0]=0xffff;
+  Flex_Data[1]=0xffff>>8;
+  Flex_Data[2]=targetPDU.isTrsmActrPosnSafeTrsmActrPosnCntr;
+  Flex_Data[3]=targetPDU.isTrsmActrPosnSafeTrsmActrPosn>>0;
+  targetPDU.isTrsmActrPosnSafeTrsmActrPosnChks=GEEA_E2E_Compute(Flex_Data,4,0x00);
+    
+  targetPDU.igTrsmActrPosnSafe_UB= 0;
+
+    //signal group: igVehBattU from Fr01
+  targetPDU.isVehBattUSysU=temp_isVehBattUSysU;
+  targetPDU.isVehBattUSysUQf=temp_isVehBattUSysUQf;
+  targetPDU.igVehBattU_UB=temp_igVehBattU_UB;
+
+    //signal group: igCamSnsrPose from Fr00
+  targetPDU.isCamSnsrPoseCntr=temp_isCamSnsrPoseCntr;
+  targetPDU.isCamSnsrPoseChks=temp_isCamSnsrPoseChks;
+  targetPDU.isCamSnsrPosePitchAg=temp_isCamSnsrPosePitchAg;
+  targetPDU.isCamSnsrPosePosnLat=temp_isCamSnsrPosePosnLat;
+  targetPDU.isCamSnsrPoseYawAg=temp_isCamSnsrPoseYawAg;
+  targetPDU.isCamSnsrPosePosnVert=temp_isCamSnsrPosePosnVert;
+  targetPDU.isCamSnsrPoseRollAg=temp_isCamSnsrPoseRollAg;
+  targetPDU.isCamSnsrPosePosnLgt=temp_isCamSnsrPosePosnLgt;
+  targetPDU.igCamSnsrPose_UB=temp_igCamSnsrPose_UB;
+  //signal isRlyPwrDistbnCmd1WdIgnRlyCmd from Fr00
+  targetPDU.isRlyPwrDistbnCmd1WdIgnRlyCmd=temp_isRlyPwrDistbnCmd1WdIgnRlyCmd;
+  targetPDU.isRlyPwrDistbnCmd1WdIgnRlyCmd_UB=temp_isRlyPwrDistbnCmd1WdIgnRlyCmd_UB;
+  //signal group:igVehSpdIndcd from Fr00
+  targetPDU.isVehSpdIndcdVehSpdIndcd=temp_isVehSpdIndcdVehSpdIndcd;
+  targetPDU.isVehSpdIndcdVeSpdIndcdUnit=temp_isVehSpdIndcdVeSpdIndcdUnit;
+  targetPDU.igVehSpdIndcd_UB=temp_igVehSpdIndcd_UB;
+
+
+
+    
+  //for FR01 same signal group 
+  temp_isWhlSpdCircumlFrntLeQf = this.isWhlSpdCircumlFrntLeQf;
+  temp_isWhlSpdCircumlFrntLe = this.isWhlSpdCircumlFrntLe;
+  temp_isWhlSpdCircumlFrntRiQf = this.isWhlSpdCircumlFrntRiQf;
+  temp_isWhlSpdCircumlFrntChks = this.isWhlSpdCircumlFrntChks;
+  temp_isWhlSpdCircumlFrntRi = this.isWhlSpdCircumlFrntRi;
+  temp_isWhlSpdCircumlFrntCntr = this.isWhlSpdCircumlFrntCntr; 
+  temp_igWhlSpdCircumlFrnt_UB=this.igWhlSpdCircumlFrnt_UB;
+  //for FR01 same signal group
+  temp_isAgDataRawSafeYawRate = this.isAgDataRawSafeYawRate_2;
+  temp_isAgDataRawSafeRollRateQf = this.isAgDataRawSafeRollRateQf_2;
+  temp_isAgDataRawSafeYawRateQf = this.isAgDataRawSafeYawRateQf_2;
+  temp_isAgDataRawSafeChks = this.isAgDataRawSafeChks_2;
+  temp_isAgDataRawSafeCntr = this.isAgDataRawSafeCntr_2;
+  temp_isAgDataRawSafeRollRate = this.isAgDataRawSafeRollRate_2;
+  temp_igAgDataRawSafe_UB=this.igAgDataRawSafe_2_UB;
+  temp_isADataRawSafeAVertQf = this.isADataRawSafeAVertQf_5;
+  temp_isADataRawSafeALgt = this.isADataRawSafeALgt_5;
+   //  write("temp_isADataRawSafeALgt=%64d",temp_isADataRawSafeALgt);
+   // write("isADataRawSafeALgt_5=%64d",this.isADataRawSafeALgt_5 );
+  temp_isADataRawSafeALat = this.isADataRawSafeALat_5;
+  temp_isADataRawSafeChks = this.isADataRawSafeChks_5;
+  temp_isADataRawSafeALat1Qf = this.isADataRawSafeALat1Qf_5;
+  temp_isADataRawSafeCntr = this.isADataRawSafeCntr_5;
+  temp_isADataRawSafeALgt1Qf = this.isADataRawSafeALgt1Qf_5;
+   temp_isADataRawSafeAVert = this.isADataRawSafeAVert_5;
+  temp_igADataRawSafe_UB=this.igADataRawSafe_5_UB;
+   
+  
+//    write("the Algt value is %d",temp_isADataRawSafeALgt  );
+//   write("the Algt value is %d",this.isADataRawSafeALgt_5  ); 
+//   write("the CHKS value is %d",this.isAgDataRawSafeChks_2  );
+//   write("the CHKS value is %d",temp_isAgDataRawSafeChks  ); 
+//   write("the ALAT value is %d",temp_isADataRawSafeALat);//
+//    write("the ALAT Value is %d",this.isADataRawSafeALat_5);//
+//   write("the ROLLRATE Value is %d",temp_isAgDataRawSafeRollRate);
+//   write("the RollRate Value is %d",this.isAgDataRawSafeRollRate_2 ); 
+//    
+//  write("the YAWRata Value is %d",temp_isAgDataRawSafeYawRate);
+//
+// 
+//  write("the RawSafeChks is %d",temp_isAgDataRawSafeChks) ;
+
+
+
+    //SET UPDATE BIT
+    targetPDU.igHznData_UB = this.igHznData_UB;
+    targetPDU.igVin_UB = this.igVin_UB;
+    targetPDU.igAmbTRaw_UB=temp_igAmbTRaw_UB;
+   //output fr  
+    frUpdatePDU(targetPDU, 1, -1);
+}
+
+
+
+//sourceNetwork::AsdmFlcFRNmPdu1 has been done
+on frPDU SourceNetwork::AsdmFlcFRNmPdu1   
+{
+    frPDU TargetNetwork::AsdmFlcFRNmPdu1 targetPDU;
+
+    checkLogger(this.Time_ns);
+    if (receivedAsdmFlcFRNmPdu1 == 0)
+    {
+        receivedAsdmFlcFRNmPdu1 = 1;
+        write("SourceNetwork::AsdmFlcFRNmPdu1");
+    }
+
+  //targetPDU.Byte0 = this.fr_Payload[0];
+//  targetPDU.fr_Payload[0] = this.fr_Payload[0];
+//  targetPDU .Bytes[0] = this.fr_Payload[0];
+//  targetPDU.Byte1 = this.fr_Payload[1];
+//  targetPDU.Byte2 = this.fr_Payload[2];
+//  targetPDU.Byte3 = this.fr_Payload[3];
+//  targetPDU.Byte4 = this.fr_Payload[4];
+//  targetPDU.Byte5 = this.fr_Payload[5];
+//  targetPDU.Byte6 = this.fr_Payload[6];
+//  targetPDU.Byte7 = this.fr_Payload[7];
+  targetPDU.byte(0)   = this.fr_Payload[0];
+  targetPDU.byte(1)   = this.fr_Payload[1];
+  targetPDU.byte(2)   = this.fr_Payload[2];
+  targetPDU.byte(3)   = this.fr_Payload[3];
+  targetPDU.byte(4)   = this.fr_Payload[4];
+  targetPDU.byte(5)   = this.fr_Payload[5];
+  targetPDU.byte(6)   = this.fr_Payload[6];
+  targetPDU.byte(7)   = this.fr_Payload[7];
+
+  frUpdatePDU(targetPDU, 1, -1);
+
+}
+
+//sourceNetwork::ASDMFlcFlexTimeSynchPdu has been done
+on frPDU SourceNetwork::ASDMFlcFlexTimeSynchPdu
+{
+  frPDU TargetNetwork::ASDMFlcFlexTimeSynchPdu targetPDU;
+//  long res = 0;
+//  byte i = 0;
+//  byte n = 0;
+//  byte remainder = 0;
+//  byte dataValue = 0;
+//  byte crc = 0;
+//  byte sc = 0;
+  
+  
+  checkLogger(this.Time_ns);
+  if (receivedASDMFlcFlexTimeSynchPdu == 0)
+  {
+      receivedASDMFlcFlexTimeSynchPdu = 1;
+  }
+  
+//  targetPDU.TimeSynchByte0 = this.fr_Payload[0];
+//  targetPDU.TimeSynchByte1 = this.fr_Payload[1];
+
+  targetPDU.byte(0) = this.fr_Payload[0];
+  targetPDU.byte(1) = this.fr_Payload[1];
+  targetPDU.byte(2) = this.fr_Payload[2];
+  targetPDU.byte(3) = this.fr_Payload[3];
+  targetPDU.byte(4) = this.fr_Payload[4];
+  targetPDU.byte(5) = this.fr_Payload[5];
+  targetPDU.byte(6) = this.fr_Payload[6];
+  targetPDU.byte(7) = this.fr_Payload[7];
+  targetPDU.byte(8) = this.fr_Payload[8];
+  targetPDU.byte(9) = this.fr_Payload[9];
+  targetPDU.byte(10) = this.fr_Payload[10];
+  targetPDU.byte(11) = this.fr_Payload[11];
+  targetPDU.byte(12) = this.fr_Payload[12];
+  targetPDU.byte(13) = this.fr_Payload[13];
+  targetPDU.byte(14) = this.fr_Payload[14];  
+  targetPDU.byte(15) = this.fr_Payload[15];
+  //write("timesynchpdu lenth is %d",targetPDU .byte );
+  
+//  if (this.fr_Payload[0] == 0x20)
+//  {
+//    // Calculate new CRC due to a bug in ASDM SW during fleet test
+//    
+//    remainder = CRC8_H2F_START_VALUE;
+//    for (i = 2; i < 17; i++)
+//    {
+//      if (i == 16)
+//      {
+//        sc = this.fr_Payload[2] & 0xf;
+//        //sc = testVector[0] & 0xf;
+//        dataValue = dataIDlist[sc];
+//      }
+//      else
+//      {
+//        dataValue = this.fr_Payload[i];
+//        //dataValue = testVector[i-2];
+//      }
+//      
+//      remainder = remainder ^ dataValue;
+//      
+//      for (n = 0; n < 8; n++)
+//      {
+//        if ((remainder & 0x80) == 0x80)
+//        {
+//          remainder = ((remainder << 1) ^ CRC8_H2F_POLYNOMIAL) & 0xff;
+//        }
+//        else
+//        {
+//          remainder = (remainder << 1);
+//        }
+//      }
+//    }
+//
+//    crc = remainder ^ CRC8_H2F_XOR;
+//    targetPDU.TimeSynchByte1 = crc;
+//    //write("CRC = %d", crc);
+//  }
+    
+  frUpdatePDU(targetPDU, 1, -1);
+}
+void setTimeSynchPdu( )
+{
+    frPDU TargetNetwork::ASDMFlcFlexTimeSynchPdu targetPDU;
+//  long res = 0;
+//  byte i = 0;
+//  byte n = 0;
+//  byte remainder = 0;
+//  byte dataValue = 0;
+//  byte crc = 0;
+//  byte sc = 0;
+  
+  
+   startLogging("Logging");
+    if (receivedASDMFlcFlexTimeSynchPdu == 0)
+  {
+      receivedASDMFlcFlexTimeSynchPdu = 1;
+     write("logTimeSynch_first");
+  }
+        
+        //writeToLog("First time stamp: %I64d\n", firstTimeStamp);
+
+
+//  targetPDU.TimeSynchByte0 = this.fr_Payload[0];
+//  targetPDU.TimeSynchByte1 = this.fr_Payload[1];
+
+  targetPDU.byte(0) = 0;
+  targetPDU.byte(1) = 0;
+  targetPDU.byte(2) = 0;
+  targetPDU.byte(3) = 0;
+  targetPDU.byte(4) = 0;
+  targetPDU.byte(5) = 0;
+  targetPDU.byte(6) = 0;
+  targetPDU.byte(7) = 0;
+  targetPDU.byte(8) = 0;
+  targetPDU.byte(9) = 0;
+  targetPDU.byte(10) =0;
+  targetPDU.byte(11) = 0;
+  targetPDU.byte(12) = 0;
+  targetPDU.byte(13) = 0;
+  targetPDU.byte(14) = 0;  
+  targetPDU.byte(15) =0;
+  //write("timesynchpdu lenth is %d",targetPDU .byte );
+  
+//  if (this.fr_Payload[0] == 0x20)
+//  {
+//    // Calculate new CRC due to a bug in ASDM SW during fleet test
+//    
+//    remainder = CRC8_H2F_START_VALUE;
+//    for (i = 2; i < 17; i++)
+//    {
+//      if (i == 16)
+//      {
+//        sc = this.fr_Payload[2] & 0xf;
+//        //sc = testVector[0] & 0xf;
+//        dataValue = dataIDlist[sc];
+//      }
+//      else
+//      {
+//        dataValue = this.fr_Payload[i];
+//        //dataValue = testVector[i-2];
+//      }
+//      
+//      remainder = remainder ^ dataValue;
+//      
+//      for (n = 0; n < 8; n++)
+//      {
+//        if ((remainder & 0x80) == 0x80)
+//        {
+//          remainder = ((remainder << 1) ^ CRC8_H2F_POLYNOMIAL) & 0xff;
+//        }
+//        else
+//        {
+//          remainder = (remainder << 1);
+//        }
+//      }
+//    }
+//
+//    crc = remainder ^ CRC8_H2F_XOR;
+//    targetPDU.TimeSynchByte1 = crc;
+//    //write("CRC = %d", crc);
+//  }
+    
+  frUpdatePDU(targetPDU, 1, -1);
+}
+
+
+  
+  //TargetNetwork::AsdmFLC_FlexrayFr00 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr00
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu00 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr00: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu00 = 2;
+      write("logfr00");
+    }
+}
+
+  //TargetNetwork::AsdmFLC_FlexrayFr01 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr01
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu01 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr01: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu01 = 2;
+       write("logfr01");
+      
+    }
+}
+
+ //TargetNetwork::AsdmFLC_FlexrayFr02 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr02
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu02 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr02: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu02 = 2;
+       write("logfr02");
+    }
+}
+
+ //TargetNetwork::AsdmFLC_FlexrayFr04 has been done
+on frFrame TargetNetwork::AsdmFLC_FlexrayFr03
+{
+    if (receivedAsdmFLC_FlexraySignalIPdu03 == 1)
+    {
+        writeToLog("AsdmFLC_FlexrayFr04: %I64d\n", this.Time_ns);
+        receivedAsdmFLC_FlexraySignalIPdu03 = 2;
+       write("logfr03");
+    }
+}
+
+ //TargetNetwork::AsdmFLC_FlexrayFr05 has been done
+
+ //TargetNetwork::AsdmFlcFRNmPdu1 has been done
+on frPDU  TargetNetwork::AsdmFlcFRNmPdu1
+{
+    if (receivedAsdmFlcFRNmPdu1 == 1)
+    {
+        writeToLog("AsdmFlcFRNmPdu1: %I64d\n", this.Time_ns);
+        receivedAsdmFlcFRNmPdu1 = 2;
+       write("logNM");
+    }
+}
+
+//TargetNetwork::ASDMFlcFlexTimeSynchFr has been done
+on frFrame TargetNetwork::ASDMFlcFlexTimeSynchFr
+{
+    if (receivedASDMFlcFlexTimeSynchPdu == 1)
+    {
+        writeToLog("ASDMFlcFlexTimeSynchFr: %I64d\n", this.Time_ns);
+        receivedASDMFlcFlexTimeSynchPdu = 2;
+       write("logTimesyncn");
+    }
+}
+
+on frPDU *
+{
+  if(has_logged_timesyn==0)
+  {
+   // setTimeSynchPdu ();
+    has_logged_timesyn =1;
+  }
+}
+

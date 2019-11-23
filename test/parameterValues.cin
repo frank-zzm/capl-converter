@@ -1,0 +1,21 @@
+/*@!Encoding:1252*/
+variables
+{
+  float PAR_vehicleCoding_wheelBase = 3.075000524520874;
+  float PAR_vehicleCoding_frontAxisToGround = 0.3700000047683716;
+  float PAR_vehicleCoding_afacHeadlampPosY = 0.7200000286102295;
+  float PAR_vehicleCoding_driveWheels = 0;
+  float PAR_vehicleCoding_installationYawAngle = 0.0;
+  float PAR_vehicleCoding_frontAxisToBumper = 0.1399998664855957;
+  float PAR_vehicleCoding_afacHeadlampPosX = 0.5299999713897705;
+  float PAR_vehicleCoding_afacCamPosY = 2.849847078323364e-07;
+  float PAR_vehicleCoding_vehicleWidth = 1.9340003728866577;
+  float PAR_vehicleCoding_afacHeadlampPosZ = 0.4000000059604645;
+  float PAR_vehicleCoding_afacCamPosZ = 1.1570003032684326;
+  float PAR_hbaGeneral_lightControlMode = 2;
+  float PAR_vehicleCoding_afacCamPosX = -0.754000186920166;
+  float PAR_vehicleCoding_installationRollAngle = 0.0;
+  float PAR_vehicleCoding_wheelRadius = 0.37000030279159546;
+  float PAR_vehicleCoding_installationPitchAngle = 0.0;
+  float PAR_vehicleCoding_viewAngleToHood = 0.24958208203315735;
+}

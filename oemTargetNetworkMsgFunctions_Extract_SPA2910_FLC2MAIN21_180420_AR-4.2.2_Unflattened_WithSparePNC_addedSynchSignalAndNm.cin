@@ -1,0 +1,519 @@
+/*@!Encoding:1252*/
+
+variables
+{
+  byte firstLongitudinalAccelerationReceived = 0;
+  byte firstLongitudinalSpeedReceived = 0;
+  byte firstLongitudinalSpeedQualReceived = 0;
+  byte firstDrivingDirectionReceived = 0;
+  byte firstAcceleratorPedalReceived = 0;
+  byte firstLateralAccelerationReceived = 0;
+  byte firstVertAccelerationReceived = 0;
+  byte firstYawRateReceived = 0;
+  byte firstYawRateQualReceived = 0;
+  byte firstAmbientTemperatureReceived = 0;
+  byte firstWiperStatusReceived = 0;
+  byte firstFrontWheelAngleReceived = 0;
+}
+
+void UpdateOEMoutput(enum e_GwInternalVariables updatedSignal)
+{
+  switch (updatedSignal)
+  {
+    case eLongitudinalAcceleration:
+      firstLongitudinalAccelerationReceived = 1;
+    break;
+    
+    case eLongitudinalSpeed:
+      firstLongitudinalSpeedReceived = 1;
+    break;
+    
+    case eLongitudinalSpeedQual:
+      firstLongitudinalSpeedQualReceived = 1;
+    break;
+
+    case eDrivingDirection:
+      firstDrivingDirectionReceived = 1;
+    break;
+
+    case eAcceleratorPedal:
+      firstAcceleratorPedalReceived = 1;
+    break;
+
+    case eLateralAcceleration:
+      firstLateralAccelerationReceived = 1;
+    break;
+
+    case eVertAcceleration:
+      firstVertAccelerationReceived = 1;
+    break;
+
+    case eYawRate:
+      firstYawRateReceived = 1;
+    break;
+
+    case eYawRateQual:
+      firstYawRateQualReceived = 1;
+    break;
+
+    case eAmbientTemperature:
+      firstAmbientTemperatureReceived = 1;
+    break;
+
+    case eWiperStatus:
+      firstWiperStatusReceived = 1;
+    break;
+
+    case eFrontWheelAngle:
+      firstFrontWheelAngleReceived = 1;
+    break;
+    
+    default:
+      writeToLog("ERROR: Unknown internal GW signal! Number = %d\n", updatedSignal);
+      return;
+  }
+
+}
+
+void SetLongitudinalSpeed(void)
+{
+  byte updateBit = 0;
+  
+  setsignal(isVehSpdLgtSafe, longitudinalSpeed * 0.01/0.00391);
+  if ((firstLongitudinalSpeedQualReceived == 1) && (firstLongitudinalSpeedQualReceived == 1)) {
+    updateBit = 1;
+  }
+  setsignal(igVehSpdLgtSafeGroup_UB, updateBit);
+}
+
+void SetDrivingDirection(void)
+{
+  byte updateBit = 0;
+
+  //setting of signal VehMtnStSafe.VehMtnSt
+  if(drivingDirection == 0) {
+    setsignal(oemTargetNetwork::isVehMtnStSafe, 0);
+  }
+  else if (drivingDirection == 1) {
+    setsignal(oemTargetNetwork::isVehMtnStSafe, 4);
+  }
+  else if (drivingDirection == 2) {
+    setsignal(oemTargetNetwork::isVehMtnStSafe, 6);
+  }
+  else {
+    setsignal(oemTargetNetwork::isVehMtnStSafe, 0);
+  }
+  
+  if (firstDrivingDirectionReceived == 1) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igVehMtnStSafeGroup_UB, updateBit);
+}
+
+void SetAcceleratorPedal(void)
+{
+  byte updateBit = 0;
+
+  //setting of signal AccrPedlRat (FLT not taken into account since no conversion in DAI_K-matrix)
+  #pragma message ("AccelPdlPosn_FLT not taken into account");
+  setsignal(oemTargetNetwork::isAccrPedlRat, acceleratorPedal / 0.00390625);
+  
+  if (firstAcceleratorPedalReceived == 1) {
+    updateBit = 1;
+  }
+  setSignal(oemTargetNetwork::isAccrPedlRat_UB, updateBit);
+}
+
+void SetLateralAcceleration(void)
+{
+  byte updateBit = 0;
+  
+  //setting of signal Alat
+  setsignal(oemTargetNetwork::isALat1, lateralAcceleration / 100 / 0.0085);
+  
+  //
+  // Hard coded value, should reflect information from Daimler bus
+  //
+  setsignal(oemTargetNetwork::isALat1Qf1, 3);
+
+  if ((firstLongitudinalAccelerationReceived == 1) && (firstVertAccelerationReceived == 1) && (firstLateralAccelerationReceived == 1)) {
+    updateBit = 1;
+  }
+  setSignal(oemTargetNetwork::igADataRawSafe_UB, updateBit);
+}
+
+void SetLongitudinalAcceleration(void)
+{
+  byte updateBit = 0;
+  
+  //setting of signal Algt
+  setsignal(oemTargetNetwork::isALgt1, longitudinalAcceleration / 100 / 0.0085);
+  
+  //
+  // Hard coded value, should reflect information from Daimler bus
+  //
+  setsignal(oemTargetNetwork::isALgt1Qf1, 3);
+
+  if ((firstLongitudinalAccelerationReceived == 1) && (firstVertAccelerationReceived == 1) && (firstLateralAccelerationReceived == 1)) {
+    updateBit = 1;
+  }
+  setSignal(oemTargetNetwork::igADataRawSafe_UB, updateBit);
+}
+
+void SetVertAcceleration(void)
+{
+  byte updateBit = 0;
+  
+  //setting of signal AVert
+  setsignal(oemTargetNetwork::isAVert2, vertAcceleration / 100 / 0.0085);
+
+  //
+  // Hard coded value, should reflect information from Daimler bus
+  //
+  setsignal(oemTargetNetwork::isAVert2Qf1, 3);
+
+  if ((firstLongitudinalAccelerationReceived == 1) && (firstVertAccelerationReceived == 1) && (firstLateralAccelerationReceived == 1)) {
+    updateBit = 1;
+  }
+  setSignal(oemTargetNetwork::igADataRawSafe_UB,1);
+}
+
+void SetYawRate(void)
+{
+  byte updateBit = 0;
+  
+  //setting of signal YawRate
+  setsignal(oemTargetNetwork::isYawRate1, yawRate  / 10000 / 0.000244140625);
+  //@sysvar::UserVariables::YawRate = _round(yawRate);
+
+  if ((firstYawRateReceived == 1) && (firstYawRateQualReceived == 1)) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igAgDataRawSafe_UB, updateBit);
+}
+
+void SetLongitudinalSpeedQual(void)
+{
+  byte updateBit = 0;
+
+  //setting of signal VehSpdLgtQf
+  if(longitudinalSpeedQual == 1)
+  {
+    setsignal(oemTargetNetwork::isVehSpdLgtSafeQf, 3);
+  }
+  else
+   {
+    setsignal(oemTargetNetwork::isVehSpdLgtSafeQf, 0);
+  }
+  
+  if ((firstLongitudinalAccelerationReceived == 1) && (firstLongitudinalSpeedQualReceived == 1)) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igVehSpdLgtSafeGroup_UB, 1);
+}
+
+void SetYawRateQual(void)
+{
+  byte updateBit = 0;
+
+  //setting of signal YawRateQf1 and YawRateQf2
+  if(yawRateQual == 2)
+  {
+    setsignal(oemTargetNetwork::isYawRate1Qf1, 3);
+    setsignal(oemTargetNetwork::isYawRate1Qf2, 3);
+  }
+  else
+   {
+    setsignal(oemTargetNetwork::isYawRate1Qf1, 0);
+    setsignal(oemTargetNetwork::isYawRate1Qf2, 0);    
+  }
+  
+  if ((firstYawRateReceived == 1) && (firstYawRateQualReceived == 1)) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igAgDataRawSafe_UB, 1);
+}
+
+void SetAmbientTemperature(void)
+{
+  byte updateBit = 0;
+
+  //setting of signal AmbTVal
+  #pragma message ("AmbTVal not found, only isAmbTRawVal");
+  setsignal(oemTargetNetwork::isAmbTRawVal, (ambientTemperature + 70) / 0.1);
+  setsignal(oemTargetNetwork::isAmbTRawQly, 3);
+  
+  
+  if (firstAmbientTemperatureReceived == 1) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igAmbTRaw_UB, updateBit);
+}
+
+void SetWiperStatus(void)
+{
+  byte updateBit = 0;
+
+  //setting of signal WiprActv
+  if(wiperStatus == 1)
+    setSignal(oemTargetNetwork::isWipgInfoWiprActv, 1);
+  else
+    setSignal(oemTargetNetwork::isWipgInfoWiprActv, 0);
+  
+  if (firstWiperStatusReceived == 1) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igWipgInfo_UB, updateBit);
+}
+
+void SetPinionAngle()
+{
+  byte updateBit = 0;
+
+  //setting of signal pinionAngle
+  setsignal(oemTargetNetwork::isPinionSteerAg1, frontWheelAngle / 0.0009765625);
+  setsignal(oemTargetNetwork::isPinionSteerAg1Qf, 3);
+  
+  if (firstFrontWheelAngleReceived == 1) {
+    updateBit = 1;
+  }
+  setsignal(oemTargetNetwork::igPinionSteerAg1Group_UB, 1);
+}
+
+void SetStaticSignals(void)
+{
+  float offsetRoll, factorRoll, offsetYaw, factorYaw, offsetPitch, factorPitch, offsetLat, factorLat,
+  offsetLgt, factorLgt, offsetVer, factorVer, offset, factor, vccScaleFactor;
+
+  vccScaleFactor = 0.1;
+
+  //
+  // Static signals in oemTargetNetwork::AsdmMid2FlxSignalIPDU05
+  //
+  offset = 6;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmAxleHeiRe, (PAR_vehicleCoding_wheelRadius + offset) * factor);
+  
+  offset = 6 - PAR_vehicleCoding_afacCamPosX;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmDstLgtToBmpFrnt, (PAR_vehicleCoding_frontAxisToBumper + offset) * factor);
+  
+  offset = 6;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmDstLatToHdLamp, (PAR_vehicleCoding_afacHeadlampPosY + offset) * factor);  
+  
+  offset = 6 + PAR_vehicleCoding_wheelBase;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmDstLongToHdLamp, (PAR_vehicleCoding_afacHeadlampPosX + offset) * factor);    
+  
+  offset = 6 + PAR_vehicleCoding_frontAxisToGround;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmDstVertToHdLamp, (PAR_vehicleCoding_afacHeadlampPosZ + offset) * factor);    
+  
+  offset = pi/2;
+  factor = 180/pi;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmHoodAg, (PAR_vehicleCoding_viewAngleToHood + offset) * factor / vccScaleFactor);    
+  
+  offset = 6;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmVehWhlBas, (PAR_vehicleCoding_wheelBase + offset) * factor);  
+  
+  offset = 6;
+  factor = 1000;
+  setSignal(oemTargetNetwork::isCamSnsrVehPrmVehWidth, (PAR_vehicleCoding_vehicleWidth + offset) * factor);
+  
+  setSignal(oemTargetNetwork::igCamSnsrVehPrm_UB, 1);
+  
+  //
+  // Static signals in oemTargetNetwork::AsdmMid2FlxSignalIPDU06
+  //
+  offsetRoll = 0;
+  factorRoll = 180/pi;
+  offsetYaw = 0;
+  factorYaw = 180/pi;
+  offsetPitch = 0;
+  factorPitch = 180/pi;  
+  
+  offsetLat = 6;
+  factorLat = 1000; 
+  offsetLgt = 6 + PAR_vehicleCoding_wheelBase;
+  factorLgt = 1000; 
+  offsetVer = 6; 
+  factorVer = 1000;   
+  
+  switch(PAR_hbaGeneral_lightControlMode)
+  {
+    case 1:
+      setsignal(oemTargetNetwork::isAhbcVers, 1);
+      break;
+    case 3:
+      setsignal(oemTargetNetwork::isAhbcVers, 2);
+      break;
+    case 4:
+      setsignal(oemTargetNetwork::isAhbcVers, 3);
+      break;
+    case 0:
+      setsignal(oemTargetNetwork::isAhbcVers, 0);
+      break;      
+  } 
+  setsignal(oemTargetNetwork::isAhbcVers_UB, 1);
+  
+  if (PAR_vehicleCoding_installationRollAngle < 0)
+  {
+    setsignal(oemTargetNetwork::isCamSnsrPoseRollAg, ((PAR_vehicleCoding_installationRollAngle*factorRoll) + offsetRoll + 360) / vccScaleFactor);
+  }
+  else
+  {
+    setsignal(oemTargetNetwork::isCamSnsrPoseRollAg, ((PAR_vehicleCoding_installationRollAngle*factorRoll) + offsetRoll) / vccScaleFactor);
+  }
+  
+  if (PAR_vehicleCoding_installationYawAngle < 0)
+  {
+    setsignal(oemTargetNetwork::isCamSnsrPoseYawAg, ((PAR_vehicleCoding_installationYawAngle*factorYaw) + offsetYaw + 360) / vccScaleFactor);
+  }
+  else
+  {
+    setsignal(oemTargetNetwork::isCamSnsrPoseYawAg, ((PAR_vehicleCoding_installationYawAngle*factorYaw) + offsetYaw) / vccScaleFactor);
+  }
+  
+  if (PAR_vehicleCoding_installationPitchAngle < 0)
+  {
+    setsignal(oemTargetNetwork::isCamSnsrPosePitchAg, ((PAR_vehicleCoding_installationPitchAngle*factorPitch) + offsetPitch + 360) / vccScaleFactor);
+  }
+  else
+  {
+    setsignal(oemTargetNetwork::isCamSnsrPosePitchAg, ((PAR_vehicleCoding_installationPitchAngle*factorPitch) + offsetPitch) / vccScaleFactor);
+  }
+  
+  setsignal(oemTargetNetwork::isCamSnsrPosePosnLat, (PAR_vehicleCoding_afacCamPosY + offsetLat) * factorLat);
+  setsignal(oemTargetNetwork::isCamSnsrPosePosnLgt, (PAR_vehicleCoding_afacCamPosX + offsetLgt) * factorLgt);
+  setsignal(oemTargetNetwork::isCamSnsrPosePosnVert, (PAR_vehicleCoding_afacCamPosZ + offsetVer) * factorVer);
+  
+  setSignal(oemTargetNetwork::igCamSnsrPose_UB, 1);
+}
+
+
+on frPDU oemTargetNetwork::AsdmMid2FlxSignalIPDU01
+{
+  checkLogger(this.Time_ns);
+  if ((receivedAsdmMid2FlxSignalIPDU01 == 0) && ((firstLongitudinalSpeedQualReceived == 1) && (firstLongitudinalSpeedQualReceived == 1)))
+  {
+      receivedAsdmMid2FlxSignalIPDU01 = 1;
+      write("AsdmMid2FlxSignalPDU01 speed: %I64d\n", this.Time_ns);
+  }
+  else if ((receivedAsdmMid2FlxSignalIPDU01 == 0) && (firstDrivingDirectionReceived == 1))
+  {
+      receivedAsdmMid2FlxSignalIPDU01 = 1;
+      write("AsdmMid2FlxSignalPDU01 direction: %I64d\n", this.Time_ns);
+  }
+  else if ((receivedAsdmMid2FlxSignalIPDU01 == 0) && ((firstYawRateReceived == 1) && (firstYawRateQualReceived == 1)))
+  {
+      receivedAsdmMid2FlxSignalIPDU01 = 1;
+      write("AsdmMid2FlxSignalPDU01 Yaw: %I64d\n", this.Time_ns);
+  }
+  else if ((receivedAsdmMid2FlxSignalIPDU01 == 0) && (firstAmbientTemperatureReceived == 1))
+  {
+      receivedAsdmMid2FlxSignalIPDU01 = 1;
+      write("AsdmMid2FlxSignalPDU01 ambient: %I64d\n", this.Time_ns);
+  }
+  else if ((receivedAsdmMid2FlxSignalIPDU01 == 0) && (firstFrontWheelAngleReceived == 1))
+  {
+      receivedAsdmMid2FlxSignalIPDU01 = 1;
+      write("AsdmMid2FlxSignalPDU01 pinion: %I64d\n", this.Time_ns);
+  }
+
+  SetLongitudinalSpeed();
+  SetDrivingDirection();
+  SetYawRate();
+  SetYawRateQual();
+  SetAmbientTemperature();
+  SetPinionAngle();
+
+  //
+  // Static signals that are part of AsdmMid2FlxSignalIPDU01
+  //
+  setsignal(oemTargetNetwork::isCarModSts1, 0);
+  setsignal(oemTargetNetwork::isUsgModSts, 13);
+  setsignal(oemTargetNetwork::isFRNetworkStatusMid2, 2);
+  setsignal(oemTargetNetwork::isRlyPwrDistbnCmd1WdPreBattSaveCmd, 0);
+
+  setsignal(oemTargetNetwork::igVehModMngtGlbSafe1_UB, 1);
+  setsignal(oemTargetNetwork::isRlyPwrDistbnCmd1WdPreBattSaveCmd_UB, 1);
+}
+
+on frPDU oemTargetNetwork::AsdmMid2FlxSignalIPDU02
+{
+  //checkLogger(this.Time_ns);
+  SetWiperStatus();
+}
+
+
+//on frPDU oemTargetNetwork::AsdmMid2FlxNmPdu1
+//{
+//  frPDU oemTargetNetwork::AsdmMid2FlxNmPdu1 pduTarget;
+//  
+//  //checkLogger(this.Time_ns);
+//  frUpdatePDU(pduTarget, 1, -1);
+//}
+
+on frPDU oemTargetNetwork::AsdmMid2FlxSignalIPDU04
+{
+  checkLogger(this.Time_ns);
+  if (receivedAsdmMid2FlxSignalIPDU04 == 0)
+  {
+      receivedAsdmMid2FlxSignalIPDU04 = 1;
+  }
+
+  SetAcceleratorPedal();
+  SetVertAcceleration();
+  SetLateralAcceleration();
+  SetLongitudinalAcceleration();
+}
+
+on frPDU oemTargetNetwork::AsdmMid2FlxSignalIPDU05
+{
+  //checkLogger(this.Time_ns);
+  SetStaticSignals();
+}
+
+on frPDU oemTargetNetwork::AsdmMid2FlxSignalIPDU06
+{
+  //checkLogger(this.Time_ns);
+  SetStaticSignals();
+}
+
+
+//on frPDU oemTargetNetwork::TimeSynchPduMid2Flx0
+//{
+//  frPDU oemTargetNetwork::TimeSynchPduMid2Flx0 pduTarget;
+//  
+//  //checkLogger(this.Time_ns);
+//  frUpdatePDU(pduTarget, 1, -1);
+//}
+
+//on frPDU oemTargetNetwork::AsdmPrototypeMid2FlxSignalIPDU01
+//{
+//  frPDU oemTargetNetwork::AsdmPrototypeMid2FlxSignalIPDU01 pduTarget;
+//  
+//  //checkLogger(this.Time_ns);
+//  frUpdatePDU(pduTarget, 1, -1);
+//}
+
+on frFrame oemTargetNetwork::AsdmMid2FlxFr01
+{
+    if (receivedAsdmMid2FlxSignalIPDU01 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr01: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU01 = 2;
+    }
+}
+
+on frFrame oemTargetNetwork::AsdmMid2FlxFr04
+{
+    if (receivedAsdmMid2FlxSignalIPDU04 == 1)
+    {
+        writeToLog("AsdmMid2FlxFr04: %I64d\n", this.Time_ns);
+        receivedAsdmMid2FlxSignalIPDU04 = 2;
+    }
+}
+

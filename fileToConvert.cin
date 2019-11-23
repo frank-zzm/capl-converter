@@ -1,0 +1,7 @@
+/*@!Encoding:1252*/
+variables
+{
+  char fileToConvert[500] = "E:\\GEEA2\\Temp\\TEMP_FOLDER\\SVS416A0DC0009_SE-YKW104_20180228_211031_SP_GEEA_FlexRay.asc";
+  char loggingFile[500] = "E:\\GEEA2\\Temp\\TEMP_FOLDER\\_tmpConv_SVS416A0DC0009_SE-YKW104_20180228_211031_SP_GEEA_FlexRay.asc";
+}
+

@@ -1,0 +1,393 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: ADAS DiagTester Vision
+VAL_TABLE_ TypeTable 5 "GENERAL" 4 "ANIMAL" 3 "PEDESTRIAN" 2 "CYCLIST" 1 "TRUCK" 0 "CAR" ;
+VAL_TABLE_ DirectionTable 1 "FORWARD" 0 "BACKWARD" ;
+
+
+BO_ 260 NV_VehicleData: 16 ADAS
+ SG_ nvAmbientTemperature : 112|8@1- (1,0) [-128|127] "degC"  Vision
+ SG_ nvObjectDetectionState : 104|3@1+ (1,0) [0|7] ""  Vision
+ SG_ nvObjectWarningState : 13|3@1+ (1,0) [0|7] ""  Vision
+ SG_ nvIgnitionState : 8|3@1+ (1,0) [0|7] ""  Vision
+ SG_ nvAmbientBrightness : 88|16@1+ (1,0) [0|65535] "lux"  Vision
+ SG_ nvVehicleTilt : 80|8@1+ (0.001,0) [0|0.255] "rad"  Vision
+ SG_ nvYawRateQual : 11|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ nvYawRate : 64|16@1- (0.0001,0) [-3.2768|3.2767] "rad/s"  Vision
+ SG_ nvLongitudinalSpeedQual : 6|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ nvLongitudinalSpeed : 48|14@1- (0.01,0) [-81.92|81.91] "m/s"  Vision
+ SG_ nvLongitudinalAccelerationQual : 4|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ nvLateralAcceleration : 32|15@1- (0.01,0) [-163.84|163.83] "m/s2"  Vision
+ SG_ nvLateralAccelerationQual : 2|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ nvLongitudinalAcceleration : 16|15@1- (0.01,0) [-163.84|163.83] "m/s2"  Vision
+ SG_ nvHeadlightsState : 0|2@1+ (1,0) [0|2] ""  Vision
+
+BO_ 258 AEB_Output: 12 Vision
+ SG_ brakeGainMaxDeceleration : 80|8@1+ (0.1,0) [0|150] "m/s2"  ADAS
+ SG_ brakeGain : 72|5@1+ (0.1,0) [0|30] "Unitless"  ADAS
+ SG_ brakeGainEnabledRequest : 64|1@1+ (1,0) [0|1] "Enum"  ADAS
+ SG_ forwardCollWarningObjectType : 56|4@1+ (1,0) [0|10] "Enum"  ADAS
+ SG_ forwardCollisionWarningRequest : 48|1@1+ (1,0) [0|1] "Enum"  ADAS
+ SG_ postEventMessageRequest : 40|3@1+ (1,0) [0|5] "Enum"  ADAS
+ SG_ collisionThreatLevel : 32|2@1+ (1,0) [0|3] "Enum"  ADAS
+ SG_ electricBeltRequest : 24|2@1+ (1,0) [0|3] "Enum"  ADAS
+ SG_ standStillRequest : 16|1@1+ (1,0) [0|1] "Enum"  ADAS
+ SG_ decelerationRequested : 8|8@1+ (0.1,0) [0|150] "m/s2"  ADAS
+ SG_ enableDecelerationRequest : 0|1@1+ (1,0) [0|1] "Enum"  ADAS
+
+BO_ 257 AEB_Input: 16 ADAS
+ SG_ brakePedalPressedQual : 114|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ steeringWhlAngleSpeedQual : 112|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ driverBrakeTorque : 96|15@1+ (1,0) [0|20000] "Nm"  Vision
+ SG_ steeringWhlAngleQual : 94|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ collAvoidSnvtySettingQual : 92|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ vehicleMotionStateQual : 90|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ accPedalPositionQual : 88|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ collAvoidSnvtySetting : 86|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ accPedalPosition : 72|8@1+ (1,0) [0|100] "%"  Vision
+ SG_ driverBrakeTorqueQual : 70|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ driverAEBOverrideQual : 68|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ vehicleMotionState : 65|3@1+ (1,0) [0|7] "enum"  Vision
+ SG_ steeringWhlAngleSpeed : 48|17@1- (0.001,0) [-65.536|65.535] "rad/s"  Vision
+ SG_ driverAEBOverride : 47|1@1+ (1,0) [0|1] "enum"  Vision
+ SG_ steeringWhlAngle : 32|15@1- (0.001,0) [-16.384|16.383] "rad"  Vision
+ SG_ brakePedalPressed : 31|1@1+ (1,0) [0|1] "enum"  Vision
+
+BO_ 1153 NM_ADAS: 64 ADAS
+ SG_ NmUd_ADAS_32bit : 32|32@1+ (1,0) [0|4294967295] ""  Vision
+ SG_ NmUd_ADAS_16bit : 16|16@1+ (1,0) [0|65535] ""  Vision
+ SG_ Nm_ADAS_SNI : 8|8@1+ (1,0) [0|255] ""  Vision
+ SG_ Nm_ADAS_CBV : 0|8@1+ (1,0) [0|255] ""  Vision
+
+BO_ 1152 NM_Vision: 8 Vision
+ SG_ NmUd_Vision_32bit : 32|32@1+ (1,0) [0|4294967295] ""  ADAS
+ SG_ NmUd_Vision_16bit : 16|16@1+ (1,0) [0|65535] ""  ADAS
+ SG_ Nm_Vision_SNI : 8|8@1+ (1,0) [0|255] ""  ADAS
+ SG_ Nm_Vision_CBV : 0|8@1+ (1,0) [0|255] ""  ADAS
+
+BO_ 1296 UDS_RQ_Func: 64 DiagTester
+ SG_ UdsRqSigFunc : 7|64@0+ (1,0) [0|0] ""  Vision
+
+BO_ 515 TSR: 64 Vision
+ SG_ SignSig : 7|8@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 514 LSR: 64 Vision
+ SG_ HighBeamSig : 7|1@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 513 LANE: 64 Vision
+ SG_ RightLane : 15|8@0+ (1,0) [0|0] ""  ADAS
+ SG_ LeftLane : 7|8@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 256 VehicleData: 32 ADAS
+ SG_ lateralAccelerationQual : 14|2@1+ (1,0) [0|2] "enum"  Vision
+ SG_ lateralAcceleration : 225|15@1- (0.01,0) [-163.84|163.83] "m/s2"  Vision
+ SG_ dynamicWheelRadiusRear : 196|12@1+ (0.001,0) [0|4.094] "m"  Vision
+ SG_ dynamicWheelRadiusFront : 212|12@1+ (0.001,0) [0|4.094] "m"  Vision
+ SG_ yawRateQual : 48|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ yawRate : 240|16@1- (0.0001,0) [-3.2768|3.2767] "rad/s"  Vision
+ SG_ wheelSpeedRearRight : 136|16@1- (0.01,0) [-327.68|327.67] "rad/s"  Vision
+ SG_ wheelSpeedRearLeft : 120|16@1- (0.01,0) [-327.68|327.67] "rad/s"  Vision
+ SG_ wheelSpeedQual : 50|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ wheelSpeedFrontRight : 152|16@1- (0.01,0) [-327.68|327.67] "rad/s"  Vision
+ SG_ wheelSpeedFrontLeft : 168|16@1- (0.01,0) [-327.68|327.67] "rad/s"  Vision
+ SG_ rearWheelAngleQual : 54|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ rearWheelAngle : 105|15@1- (0.0001,0) [-1.6384|1.6383] "rad"  Vision
+ SG_ longitudinalSpeedQual : 52|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ longitudinalSpeed : 90|14@1- (0.01,0) [-81.92|81.91] "m/s"  Vision
+ SG_ longitudinalAccelerationQual : 30|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ longitudinalAcceleration : 73|15@1- (0.01,0) [-163.84|163.83] "m/s2"  Vision
+ SG_ frontWheelAngleQual : 6|2@1+ (1,0) [0|3] "enum"  Vision
+ SG_ frontWheelAngle : 32|16@1- (1E-005,0) [-0.32768|0.32767] "rad"  Vision
+ SG_ brakeTorque : 16|14@1+ (1,0) [0|16383] "Nm"  Vision
+ SG_ turnIndicator : 11|3@1+ (1,0) [0|7] "enum"  Vision
+ SG_ suspensionType : 8|3@1+ (1,0) [0|7] "enum"  Vision
+ SG_ ignitionState : 3|3@1+ (1,0) [0|7] "enum"  Vision
+ SG_ engineState : 0|3@1+ (1,0) [0|7] "enum"  Vision
+
+BO_ 512 OD: 64 Vision
+ SG_ Object1Type : 7|3@0+ (1,0) [0|0] ""  ADAS
+ SG_ Object1PosYSig : 23|8@0- (1,0) [0|0] "m"  ADAS
+ SG_ Object1PosXSig : 15|8@0+ (1,0) [0|0] "m"  ADAS
+
+BO_ 1027 MEAS_4: 64 Vision
+ SG_ Meas4Sig : 7|64@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 1026 MEAS_3: 64 Vision
+ SG_ Meas3Sig : 7|64@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 1025 MEAS_2: 64 Vision
+ SG_ Meas2Sig : 7|64@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 1024 MEAS_1: 64 Vision
+ SG_ Meas1Sig : 7|64@0+ (1,0) [0|0] ""  ADAS
+
+BO_ 1281 UDS_RS: 64 Vision
+ SG_ UdsRsSig : 7|64@0+ (1,0) [0|0] ""  DiagTester
+
+BO_ 1280 UDS_RQ: 64 DiagTester
+ SG_ UdsRqSig : 7|64@0+ (1,0) [0|0] ""  Vision
+
+
+
+CM_ SG_ 260 nvAmbientTemperature "Ambient temperature.";
+CM_ SG_ 260 nvIgnitionState "Ignition state. ";
+CM_ SG_ 260 nvAmbientBrightness "Ambient bringtness to determine if there is light or not for shutting down the NV system when there is not enough light. ";
+CM_ SG_ 260 nvVehicleTilt "Used to adjust DECAL algorithm depending on vehicle tilt. ";
+CM_ SG_ 260 nvYawRateQual "Quality of yawRate. 0 = UNSAFE, 1 = SAFE.";
+CM_ SG_ 260 nvYawRate "Yaw rate of the ego vehicle.";
+CM_ SG_ 260 nvLongitudinalSpeedQual "Quality of longitudinalSpeed. 0 = UNSAFE, 1 = SAFE.";
+CM_ SG_ 260 nvLongitudinalSpeed "Longitudinal speed of the ego vehicle. Positive speed is forward direction in the X direction.";
+CM_ SG_ 260 nvLongitudinalAccelerationQual "Quality of longitudinalAcceleration";
+CM_ SG_ 260 nvLateralAcceleration "lateralAcceleration. Positive values in positive y direction (in ACLC).";
+CM_ SG_ 260 nvLateralAccelerationQual "Quality of lateralAcceleration.";
+CM_ SG_ 260 nvLongitudinalAcceleration "longitudinalAcceleration. Positive values in positive x direction (in ACLC).";
+CM_ SG_ 260 nvHeadlightsState "headlights state. ";
+CM_ SG_ 256 lateralAccelerationQual "Quality of lateralAcceleration.";
+CM_ SG_ 256 lateralAcceleration "lateralAcceleration. Positive values in positive y direction (in ACLC).";
+CM_ SG_ 256 dynamicWheelRadiusRear "Dynamic wheel radius for rear wheels";
+CM_ SG_ 256 dynamicWheelRadiusFront "Dynamic wheel radius for front wheels";
+CM_ SG_ 256 yawRateQual "Quality of yawRate. 0 = UNSAFE, 1 = SAFE.";
+CM_ SG_ 256 yawRate "Yaw rate of the ego vehicle.";
+CM_ SG_ 256 wheelSpeedRearRight "Wheel speed for rear right wheel.";
+CM_ SG_ 256 wheelSpeedRearLeft "Wheel speed for rear left wheel.";
+CM_ SG_ 256 wheelSpeedQual "Quality of wheelSpeed signals.  0 = UNSAFE, 1 = SAFE.";
+CM_ SG_ 256 wheelSpeedFrontRight "Wheel speed for front right wheel.";
+CM_ SG_ 256 wheelSpeedFrontLeft "Wheel speed for front left wheel.";
+CM_ SG_ 256 rearWheelAngle "Rear wheel angle of the ego vehicle. Positive values means wheels turning to left.";
+CM_ SG_ 256 longitudinalSpeedQual "Quality of longitudinalSpeed. 0 = UNSAFE, 1 = SAFE.";
+CM_ SG_ 256 longitudinalSpeed "Longitudinal speed of the ego vehicle. Positive speed is forward direction in the X direction.";
+CM_ SG_ 256 longitudinalAccelerationQual "Quality of longitudinalAcceleration";
+CM_ SG_ 256 longitudinalAcceleration "longitudinalAcceleration. Positive values in positive x direction (in ACLC).";
+CM_ SG_ 256 frontWheelAngleQual "Quality of frontWheelAngle.";
+CM_ SG_ 256 frontWheelAngle "Front wheel angle of the ego vehicle. Positive values means wheels turning to left.";
+CM_ SG_ 256 brakeTorque "Applied brake torque.";
+CM_ SG_ 256 ignitionState "Range: LOCK OFF ACC ON START SNA";
+BA_DEF_ BO_  "VFrameFormat" ENUM  "StandardCAN","ExtendedCAN","reserved","reserved","reserved","reserved","reserved","reserved","reserved","reserved","reserved","reserved","reserved","reserved","StandardCAN_FD","ExtendedCAN_FD";
+BA_DEF_ SG_  "GenSigSendType" ENUM  "Cyclic","OnWrite","OnWriteWithRepetition","OnChange","OnChangeWithRepetition","IfActive","IfActiveWithRepetition","NoSigSendType","OnChangeAndIfActive","OnChangeAndIfActiveWithRepetition";
+BA_DEF_ SG_  "GenSigCycleTime" INT 0 0;
+BA_DEF_ SG_  "GenSigCycleTimeActive" INT 0 0;
+BA_DEF_ SG_  "GenSigInactiveValue" INT 0 0;
+BA_DEF_ SG_  "GenSigStartValue" INT 0 0;
+BA_DEF_ BO_  "DiagRequest" ENUM  "No","Yes";
+BA_DEF_ BO_  "DiagResponse" ENUM  "No","Yes";
+BA_DEF_ BO_  "DiagState" ENUM  "No","Yes";
+BA_DEF_ BO_  "GenMsgILSupport" ENUM  "no","yes";
+BA_DEF_ BO_  "NmAsrMessage" ENUM  "no","yes";
+BA_DEF_ BO_  "GenMsgSendType" ENUM  "Cyclic","NotUsed","NotUsed","NotUsed","NotUsed","NotUsed","NotUsed","IfActive","NoMsgSendType","NotUsed";
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 0;
+BA_DEF_ BO_  "GenMsgCycleTimeFast" INT 0 0;
+BA_DEF_ BO_  "GenMsgNrOfRepetition" INT 0 0;
+BA_DEF_ BO_  "GenMsgDelayTime" INT 0 0;
+BA_DEF_ BO_  "GenMsgStartDelayTime" INT 0 0;
+BA_DEF_ BO_  "DiagUUDTResponse" ENUM  "No","Yes";
+BA_DEF_ BO_  "DiagConnection" INT 0 65535;
+BA_DEF_ BU_  "ILUsed" ENUM  "no","yes";
+BA_DEF_ BU_  "NmAsrCanMsgCycleOffset" INT 0 65535;
+BA_DEF_ BU_  "NmAsrCanMsgReducedTime" INT 0 65535;
+BA_DEF_ BU_  "NmAsrNode" ENUM  "no","yes";
+BA_DEF_ BU_  "NmAsrNodeIdentifier" INT 0 255;
+BA_DEF_  "IlTxTimeout" INT 0 65535;
+BA_DEF_  "NmAsrBaseAddress" HEX 0 65535;
+BA_DEF_  "NmAsrCanMsgCycleTime" INT 0 65535;
+BA_DEF_  "NmAsrMessageCount" INT 0 256;
+BA_DEF_  "NmAsrRepeatMessageTime" INT 0 65535;
+BA_DEF_  "NmAsrTimeoutTime" INT 0 65535;
+BA_DEF_  "NmAsrWaitBusSleepTime" INT 0 65535;
+BA_DEF_  "Manufacturer" STRING ;
+BA_DEF_  "NmType" STRING ;
+BA_DEF_  "Baudrate" INT 0 1000000;
+BA_DEF_  "DBName" STRING ;
+BA_DEF_  "BusType" STRING ;
+BA_DEF_REL_ BU_SG_REL_  "GenSigTimeoutTime" INT 0 65535;
+BA_DEF_DEF_  "VFrameFormat" "ExtendedCAN_FD";
+BA_DEF_DEF_  "GenSigSendType" "Cyclic";
+BA_DEF_DEF_  "GenSigCycleTime" 0;
+BA_DEF_DEF_  "GenSigCycleTimeActive" 0;
+BA_DEF_DEF_  "GenSigInactiveValue" 0;
+BA_DEF_DEF_  "GenSigStartValue" 0;
+BA_DEF_DEF_  "DiagRequest" "No";
+BA_DEF_DEF_  "DiagResponse" "No";
+BA_DEF_DEF_  "DiagState" "No";
+BA_DEF_DEF_  "GenMsgILSupport" "yes";
+BA_DEF_DEF_  "NmAsrMessage" "no";
+BA_DEF_DEF_  "GenMsgSendType" "NoMsgSendType";
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_DEF_DEF_  "GenMsgCycleTimeFast" 0;
+BA_DEF_DEF_  "GenMsgNrOfRepetition" 0;
+BA_DEF_DEF_  "GenMsgDelayTime" 0;
+BA_DEF_DEF_  "GenMsgStartDelayTime" 0;
+BA_DEF_DEF_  "DiagUUDTResponse" "No";
+BA_DEF_DEF_  "DiagConnection" 0;
+BA_DEF_DEF_  "ILUsed" "yes";
+BA_DEF_DEF_  "NmAsrCanMsgCycleOffset" 0;
+BA_DEF_DEF_  "NmAsrCanMsgReducedTime" 50;
+BA_DEF_DEF_  "NmAsrNode" "yes";
+BA_DEF_DEF_  "NmAsrNodeIdentifier" 0;
+BA_DEF_DEF_  "IlTxTimeout" 0;
+BA_DEF_DEF_  "NmAsrBaseAddress" 1024;
+BA_DEF_DEF_  "NmAsrCanMsgCycleTime" 100;
+BA_DEF_DEF_  "NmAsrMessageCount" 64;
+BA_DEF_DEF_  "NmAsrRepeatMessageTime" 400;
+BA_DEF_DEF_  "NmAsrTimeoutTime" 1000;
+BA_DEF_DEF_  "NmAsrWaitBusSleepTime" 750;
+BA_DEF_DEF_  "Manufacturer" "Vector";
+BA_DEF_DEF_  "NmType" "";
+BA_DEF_DEF_  "Baudrate" 500000;
+BA_DEF_DEF_  "DBName" "CAN";
+BA_DEF_DEF_  "BusType" "CAN";
+BA_DEF_DEF_REL_ "GenSigTimeoutTime" 0;
+BA_ "BusType" "CAN FD";
+BA_ "NmType" "NmAsr";
+BA_ "NmAsrBaseAddress" 1152;
+BA_ "DBName" "template_can";
+BA_ "NmAsrNodeIdentifier" BU_ ADAS 1;
+BA_ "NmAsrNode" BU_ DiagTester 0;
+BA_ "GenMsgCycleTime" BO_ 260 20;
+BA_ "GenMsgSendType" BO_ 260 0;
+BA_ "VFrameFormat" BO_ 260 14;
+BA_ "GenMsgSendType" BO_ 258 0;
+BA_ "GenMsgCycleTime" BO_ 258 20;
+BA_ "VFrameFormat" BO_ 258 14;
+BA_ "GenMsgSendType" BO_ 257 0;
+BA_ "GenMsgCycleTime" BO_ 257 20;
+BA_ "VFrameFormat" BO_ 257 14;
+BA_ "GenMsgSendType" BO_ 1153 0;
+BA_ "GenMsgCycleTime" BO_ 1153 100;
+BA_ "NmAsrMessage" BO_ 1153 1;
+BA_ "GenMsgILSupport" BO_ 1153 0;
+BA_ "VFrameFormat" BO_ 1153 14;
+BA_ "GenMsgCycleTime" BO_ 1152 100;
+BA_ "GenMsgSendType" BO_ 1152 0;
+BA_ "NmAsrMessage" BO_ 1152 1;
+BA_ "GenMsgILSupport" BO_ 1152 0;
+BA_ "VFrameFormat" BO_ 1152 14;
+BA_ "GenMsgILSupport" BO_ 1296 0;
+BA_ "DiagState" BO_ 1296 1;
+BA_ "GenMsgSendType" BO_ 1296 0;
+BA_ "GenMsgCycleTime" BO_ 1296 100;
+BA_ "VFrameFormat" BO_ 1296 14;
+BA_ "GenMsgSendType" BO_ 515 0;
+BA_ "GenMsgCycleTime" BO_ 515 100;
+BA_ "VFrameFormat" BO_ 515 14;
+BA_ "GenMsgCycleTime" BO_ 514 100;
+BA_ "GenMsgSendType" BO_ 514 0;
+BA_ "VFrameFormat" BO_ 514 14;
+BA_ "GenMsgCycleTime" BO_ 513 100;
+BA_ "GenMsgSendType" BO_ 513 0;
+BA_ "VFrameFormat" BO_ 513 14;
+BA_ "GenMsgSendType" BO_ 256 0;
+BA_ "GenMsgCycleTime" BO_ 256 20;
+BA_ "VFrameFormat" BO_ 256 14;
+BA_ "GenMsgCycleTime" BO_ 512 100;
+BA_ "GenMsgSendType" BO_ 512 0;
+BA_ "VFrameFormat" BO_ 512 14;
+BA_ "GenMsgCycleTime" BO_ 1027 100;
+BA_ "GenMsgSendType" BO_ 1027 0;
+BA_ "VFrameFormat" BO_ 1027 14;
+BA_ "GenMsgCycleTime" BO_ 1026 100;
+BA_ "GenMsgSendType" BO_ 1026 0;
+BA_ "VFrameFormat" BO_ 1026 14;
+BA_ "GenMsgCycleTime" BO_ 1025 100;
+BA_ "GenMsgSendType" BO_ 1025 0;
+BA_ "VFrameFormat" BO_ 1025 14;
+BA_ "GenMsgCycleTime" BO_ 1024 100;
+BA_ "GenMsgSendType" BO_ 1024 0;
+BA_ "VFrameFormat" BO_ 1024 14;
+BA_ "GenMsgILSupport" BO_ 1281 0;
+BA_ "DiagResponse" BO_ 1281 1;
+BA_ "GenMsgSendType" BO_ 1281 0;
+BA_ "GenMsgCycleTime" BO_ 1281 100;
+BA_ "VFrameFormat" BO_ 1281 14;
+BA_ "GenMsgILSupport" BO_ 1280 0;
+BA_ "DiagRequest" BO_ 1280 1;
+BA_ "GenMsgSendType" BO_ 1280 0;
+BA_ "GenMsgCycleTime" BO_ 1280 100;
+BA_ "VFrameFormat" BO_ 1280 14;
+BA_ "GenSigStartValue" SG_ 260 nvObjectDetectionState 3;
+BA_ "GenSigStartValue" SG_ 260 nvObjectWarningState 3;
+BA_ "GenSigStartValue" SG_ 258 brakeGain 10;
+BA_ "GenSigStartValue" SG_ 256 rearWheelAngle 0;
+BA_ "GenSigStartValue" SG_ 256 frontWheelAngle 0;
+VAL_ 260 nvObjectDetectionState 4 "OD_STATE_SNA" 3 "OD_PEDESTRIAN_ON_ANIMAL_ON" 2 "OD_PEDESTRIAN_OFF_ANIMAL_ON" 1 "OD_PEDESTRIAN_ON_ANIMAL_OFF" 0 "OD_PEDESTRIAN_OFF_ANIMAL_OFF" ;
+VAL_ 260 nvObjectWarningState 4 "OW_STATE_SNA" 3 "OW_PEDESTRIAN_ON_ANIMAL_ON" 2 "OW_PEDESTRIAN_OFF_ANIMAL_ON" 1 "OW_PEDESTRIAN_ON_ANIMAL_OFF" 0 "OW_PEDESTRIAN_OFF_ANIMAL_OFF" ;
+VAL_ 260 nvIgnitionState 7 "IGNITION_STATE_SNA" 6 "IGNITION_STATE_NDEF6" 5 "IGNITION_STATE_START" 4 "IGNITION_STATE_ON" 3 "IGNITION_STATE_NDEF3" 2 "IGNITION_STATE_ACC" 1 "IGNITION_STATE_OFF" 0 "IGNTION_STATE_LOCK" ;
+VAL_ 260 nvYawRateQual 2 "SNA" 1 "AVAILABLE" 0 "UNAVAILABLE" ;
+VAL_ 260 nvLongitudinalSpeedQual 2 "SNA" 1 "AVAILABLE" 0 "UNAVAILABLE" ;
+VAL_ 260 nvLongitudinalAccelerationQual 2 "SNA" 1 "AVAILABLE" 0 "UNAVAILABLE" ;
+VAL_ 260 nvLateralAccelerationQual 2 "SNA" 1 "UNAVAILABLE" 0 "AVAILABLE" ;
+VAL_ 260 nvHeadlightsState 2 "HEADLIGHTS_STATE_SNA" 1 "HEADLIGHTS_STATE_ON" 0 "HEADLIGHTS_OFF" ;
+VAL_ 258 brakeGainEnabledRequest 1 "On" 0 "Off" ;
+VAL_ 258 forwardCollWarningObjectType 10 "VehOfUkwnClass" 9 "Bicycle" 8 "ObjGen" 7 "Anim" 6 "ObstclVert2" 5 "ObstclVert1" 4 "Ped" 3 "Truck" 2 "Motorcycle" 1 "Car" 0 "UkwnClass" ;
+VAL_ 258 forwardCollisionWarningRequest 1 "On" 0 "Off" ;
+VAL_ 258 postEventMessageRequest 5 "CtaBrkMsg" 4 "BrkPls" 3 "IntvLgtAndIntvLat" 2 "IntvLat" 1 "IntvLgt" 0 "NoMsg" ;
+VAL_ 258 collisionThreatLevel 3 "ThreatHi" 2 "ThreatMed" 1 "ThreatLo" 0 "Ukwn" ;
+VAL_ 258 electricBeltRequest 3 "NotInUse" 2 "ActvnFHi" 1 "ActvnFLo" 0 "NoActvn" ;
+VAL_ 258 standStillRequest 1 "On" 0 "Off" ;
+VAL_ 258 enableDecelerationRequest 1 "On" 0 "Off" ;
+VAL_ 257 brakePedalPressedQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 steeringWhlAngleSpeedQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 steeringWhlAngleQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 collAvoidSnvtySettingQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 vehicleMotionStateQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 accPedalPositionQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 collAvoidSnvtySetting 3 "HiSnvty" 2 "NormSnvty" 1 "LoSnvty" 0 "NotInUse" ;
+VAL_ 257 driverBrakeTorqueQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 driverAEBOverrideQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 257 vehicleMotionState 7 "RollgBackwVal2" 6 "RollgBackwVal1" 5 "RollgFwdVal2" 4 "RollgFwdVal1" 3 "StandStillVal3" 2 "StandStillVal2" 1 "StandStillVal1" 0 "Ukwn" ;
+VAL_ 257 driverAEBOverride 1 "Yes" 0 "No" ;
+VAL_ 257 brakePedalPressed 1 "Yes" 0 "No" ;
+VAL_ 256 lateralAccelerationQual 2 "SNA" 1 "Available" 0 "Unavailable" ;
+VAL_ 256 dynamicWheelRadiusRear 4095 "SNA value" ;
+VAL_ 256 dynamicWheelRadiusFront 4095 "SNA value" ;
+VAL_ 256 yawRateQual 2 "SNA" 1 "Available" 0 "Unavailable" ;
+VAL_ 256 wheelSpeedQual 2 "SNA" 1 "Available" 0 "Unavailable" ;
+VAL_ 256 rearWheelAngleQual 2 "SNA" 1 "Available" 0 "Unavailable" ;
+VAL_ 256 longitudinalSpeedQual 2 "SNA" 1 "Safe" 0 "Unsafe" ;
+VAL_ 256 longitudinalAccelerationQual 2 "SNA" 1 "Available" 0 "Unavailable" ;
+VAL_ 256 frontWheelAngleQual 2 "SNA" 1 "Available" 0 "Unavailable" ;
+VAL_ 256 turnIndicator 3 "SNA" 2 "Right" 1 "Left" 0 "Idle" ;
+VAL_ 256 suspensionType 3 "SNA" 2 "Full Adaptive Suspension" 1 "Rear Adaptive Suspension" 0 "Steel Suspension" ;
+VAL_ 256 ignitionState 5 "SNA" 4 "Start" 3 "ON" 2 "ACC" 1 "OFF" 0 "Lock" ;
+VAL_ 256 engineState 6 "SNA" 5 "Limited" 4 "Unlimited" 3 "Idle Stable" 2 "Idle Unstable" 1 "Start" 0 "Stop" ;
+VAL_ 512 Object1Type 5 "GENERAL" 4 "ANIMAL" 3 "PEDESTRIAN" 2 "CYCLIST" 1 "TRUCK" 0 "CAR" ;
+SIG_GROUP_ 260 NvObjectsSigGroup 1 : nvObjectWarningState nvObjectDetectionState;
+SIG_GROUP_ 260 NvVehicleMotionSigGroup 1 : nvLongitudinalAcceleration nvLateralAccelerationQual nvLateralAcceleration nvLongitudinalAccelerationQual nvLongitudinalSpeed nvLongitudinalSpeedQual nvYawRate nvYawRateQual;
+SIG_GROUP_ 260 NvVehicleMiscSigGroup 1 : nvAmbientTemperature nvIgnitionState nvVehicleTilt nvAmbientBrightness nvHeadlightsState;
+SIG_GROUP_ 258 AEB_Output 1 : enableDecelerationRequest decelerationRequested standStillRequest electricBeltRequest collisionThreatLevel postEventMessageRequest forwardCollisionWarningRequest forwardCollWarningObjectType brakeGainEnabledRequest brakeGain brakeGainMaxDeceleration;
+SIG_GROUP_ 257 AEB_Input 1 : brakePedalPressedQual steeringWhlAngleSpeedQual steeringWhlAngleQual collAvoidSnvtySettingQual vehicleMotionStateQual accPedalPositionQual driverBrakeTorqueQual driverAEBOverrideQual driverBrakeTorque driverAEBOverride collAvoidSnvtySetting accPedalPosition brakePedalPressed vehicleMotionState steeringWhlAngleSpeed steeringWhlAngle;
+SIG_GROUP_ 256 EgoMotionSigGroup 1 : lateralAccelerationQual lateralAcceleration dynamicWheelRadiusFront dynamicWheelRadiusRear yawRateQual yawRate wheelSpeedRearRight wheelSpeedRearLeft wheelSpeedQual wheelSpeedFrontRight wheelSpeedFrontLeft rearWheelAngleQual rearWheelAngle longitudinalSpeedQual longitudinalSpeed longitudinalAccelerationQual longitudinalAcceleration frontWheelAngleQual frontWheelAngle brakeTorque;
+SIG_GROUP_ 256 VehicleMiscSigGroup 1 : turnIndicator suspensionType ignitionState engineState;
+

@@ -1,0 +1,8 @@
+Start conversion manager job that will handle input file list: split original list into smaller sub-lists that will be converted in parallel by available agents
+Usage: start_conversion_manager(String listFilePath, String numFiles, String conversionType, String isUrgent)
+Parameters:
+listFilePath - Path to input file list holding .DAT files that need to be converted
+               (e.g. \\SE03-FS01.corp.int\COMMON$\SE03\DataLake\Vision_tmp_data\GVP-11882\TestFilesList1.txt)
+numFiles - Number of output files per sub-list
+conversionType - Type of conversion which will be performed (Choices: flc2-resim-2910 or dai-to-flc2)
+isUrgent - Should be set if conversion job is considered to be high prio
